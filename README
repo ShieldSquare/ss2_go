@@ -1,0 +1,119 @@
+========================================
+SHIELDSQUARE GO LANG INTEGRATION GUIDE
+========================================
+
+========================================
+Version: Go Language connector V-5.1.0
+========================================
+
+========================================
+INTRODUCTION
+========================================
+This guide contains crisp instructions to integrate ShieldSquare for Real-time Bot management Solution with your GoLang Web application. You can start the integration in Monitor Mode wherein you can analyse the site traffic and uncover all malicious bot related information. There is no action performed for prevention of the bot activities, rather the website is staged for studying and observing all the bot/genuine hits encountered.
+..............................................................................
+
+========================================
+CONFIGURE config.json in Go1.8.5_V_1.0.0
+========================================
+
+{
+  "sid":"Your Sandbox ID",
+  "mode":"Monitor/Active",
+  "async_http_post":true/false,
+  "timeout_value":100,
+  "sess_id":"sessid",
+  "ip_address":"RemoteAddr",
+  "ss2_domain":"ss_sa.shieldsquare.net",
+  "ss2_ssl_enabled":true/false,
+  "domain_ttl":360,
+  "log_path":"/tmp/"
+
+}
+
+mode            :   Sets the mode of the operation depending on the mode of
+                    activation. Set value to ‘Monitor’ which indicates
+                    ShieldSquare is in monitor mode.
+                    Note:ShieldSquare recommends to start integration in
+                    monitor mode.
+
+sid             :   This holds the subscriber id of the user which can be
+                    obtained by clicking on the Subscriber id details link on
+                    the dashboard.Choose Sandbox Id as you are integrating for
+                    the very first time.
+                    Note:Sandbox Id is meant for only testing and verification
+                    purposes and requests sent using this ID will not be
+                    persisted by ShieldSquare Service. You can replace Sandbox
+                    ID with Production ID once you want to move to Production
+                    environment.
+
+ss2_domain      :   Select the ShieldSquare server closest to the website’s
+                    server and assign it to the ss_apicloud_server property.
+                    Available options are:-
+                                         US – ss_scus.shieldsquare.net
+                                         India/Asia – ss_sa.shieldsquare.net
+                                         Australia – ss_au.shieldsquare.net
+                                         Europe – ss_ew.shieldsquare.net
+                    Quick Tip:To help you find out our nearest servers use
+                    this Jar file. For other locations, refer this Link. For
+                    further assistance, please reach us at
+                    support@shieldsquare.com
+
+async_http_post :   To send asynchronous request.
+
+timeout_value   :   This is timeout value after which if no response
+                    connection will get terminated between golang and cfm
+
+sess_id         :   Name of session cookie.
+
+ip_address      :   Name of HTTP header from where IP address should be taken
+
+ss2_ssl_enabled :   If endpoint is ssl enabled, set this value to true
+
+log_path        :   Path where you wan to keep the log files.
+
+domain_ttl      :   Time after which you again want to get ip from DNS
+..............................................................................
+
+
+========================================
+STEPS TO INSTALL PLUGIN
+========================================
+
+1. if not in root change to root user.
+2. Run GoSetup.sh script with giving GOPATH as input.
+
+
+========================================
+HOW TO USE
+========================================
+
+1. Import "ss2" Pradeep
+2. Pass userid and call_type parameter to ValidateRequest()
+
+    user : Set the user-name/user-id/hash-value of the logged-in visitors to user. user is an optional parameter. Customer can leave it as empty string.
+
+    call_type :
+    =================================
+    1 -> for a normal page request
+    2 -> for form submit
+    6 -> for a mobile APP
+    7 -> for a feature phone
+    =================================
+3. call function ValidateRequest in your request handler
+Note: ValidateRequest returns result which contain responsecode
+
+RESPONSE CODES
+=================
+    0  -> Valid request
+    2  -> Display captcha code
+    3  -> User blocked
+    4  -> Feed Fake data
+   -1 -> Error processing the Request by ShieldSquare module (usually occurs due to timeout)
+
+Example:-
+    call_type:=1
+    user:="sample user"
+    result,_:=ssapi.ValidateRequest(req,w,call_type,user,"$GOPATH/config.json");
+
+
+Integration URL - http://integration.shieldsquare.com
