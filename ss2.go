@@ -21,6 +21,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/base64"
+	"flag"
 )
 
 /**
@@ -75,6 +76,7 @@ type APIServer struct {
 	APIServerSSL string `json:"api_server_ssl_enabled"`
 	DeploymentNumber string `json:"deployment_number"`
 	Domain interface{} `json:"domain"`
+	LogPath string `json:"log_dir"`
 }
 
 type APIVersion struct {
@@ -139,6 +141,11 @@ func init(){
 	if err != nil {
 		fmt.Println("error:", err)
 	}
+
+	flag.Lookup("log_dir").Value.Set(apiServer.LogPath)
+	flag.Lookup("v").Value.Set("2")
+	flag.Parse()
+
 	timeout, _ := strconv.Atoi(apiServer.APIServerTimeout)
 	ssl , _ := strconv.ParseBool(apiServer.APIServerSSL)
 	httpClient = createHTTPClient(timeout, ssl)
@@ -658,7 +665,7 @@ func GenerateUUID() string {
 
 func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain string) string {
 
-	if strings.Compare(RedirDomain,"validate.perfdrive.com") == 0 {
+	if strings.Compare(RedirDomain,"validate.perfdrive.com") != 0 {
 		cssa := url.QueryEscape(ssJsonObj.Zpsbd4)
 		InputDigest := ssJsonObj.Zpsbd1 + ssJsonObj.Zpsbd4
 		Digest := sha1.Sum([]byte(InputDigest))
@@ -666,7 +673,7 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		cssc := base64.StdEncoding.EncodeToString([]byte(StringReverse(ssJsonObj.Zpsbd1)))
 		return "ssa=" + cssa + "&ssb=" + cssb + "&ssc=" + cssc
 	}
-	
+
 	Digits := "0123456789"
 	Chars := "abcdefghijk@lmnop"
 	CharDigits0 := "0123456789abcdef"
