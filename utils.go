@@ -80,9 +80,9 @@ func IsFilterRequest(url string) bool  {
   func GetUzmcr(val string) string {
   	uzmcr:=4
   	ssresp,err:=strconv.Atoi(val)
-  	if err!=nil{
+  	if err==nil{
 		randomNumber:=rand.Intn(100 - 1) + 1
 		uzmcr=(4*randomNumber)+ssresp
 	}
-	return string(uzmcr)
+	return strconv.Itoa(uzmcr)
   }

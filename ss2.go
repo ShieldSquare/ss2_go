@@ -557,7 +557,7 @@ func ValidateRequest(req *http.Request,w http.ResponseWriter,call_type int,user 
 		}
 	}
 	if call_type == MOBILE{
-		w.Header().Add("_zmcr",GetUzmcr(ss_Resp.Ssresp))
+		w.Header().Add("_uzmcr",GetUzmcr(ss_Resp.Ssresp))
 		if apiConfig.Data.PostURL!="" {
 			w.Header().Add("posturl", apiConfig.Data.PostURL)
 		}
