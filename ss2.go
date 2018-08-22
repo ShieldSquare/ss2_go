@@ -664,8 +664,9 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		Digest := sha1.Sum([]byte(InputDigest))
 		cssb := hex.EncodeToString(Digest[:])
 		cssc := base64.StdEncoding.EncodeToString([]byte(StringReverse(ssJsonObj.Zpsbd1)))
-		return "ssa=" + cssa + "&ssb=" + cssb + "&ssc" + cssc
+		return "ssa=" + cssa + "&ssb=" + cssb + "&ssc=" + cssc
 	}
+	
 	Digits := "0123456789"
 	Chars := "abcdefghijk@lmnop"
 	CharDigits0 := "0123456789abcdef"
