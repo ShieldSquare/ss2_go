@@ -1,10 +1,10 @@
 package ss2_go
 
 import (
-		"regexp"
-	"strings"
-	"strconv"
 	"math/rand"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 /**
@@ -25,31 +25,31 @@ func StringReverse(s string) string {
  * If regex matched with url return the sid and call type associated to that regex
  */
 
- func Check_GetMultiSite(url string) (bool, []string){
- 	var multisite []string
-		if apiServer.Domain!=nil{
-			domains := apiServer.Domain.(map[string]interface{})
-			for key, val := range domains {
-				if matched,_:= regexp.MatchString("(.*)"+key+"(.*)",url);matched {
-					match:=val.([]interface{})
-					multisite[0]=match[0].(string)
-					multisite[1]=match[1].(string)
-					return true, multisite
-				}
+func Check_GetMultiSite(url string) (bool, []string) {
+	multisite := make([]string, 2)
+	if apiServer.Domain != nil {
+		domains := apiServer.Domain.(map[string]interface{})
+		for key, val := range domains {
+			if matched, _ := regexp.MatchString("(.*)"+key+"(.*)", url); matched {
+				match := val.([]interface{})
+				multisite[0] = match[0].(string)
+				multisite[1] = match[1].(string)
+				return true, multisite
 			}
 		}
-		return false,nil
- }
+	}
+	return false, nil
+}
 
- /**
-  * IsFilterRequest
-  * Regex Match With URL extension , if matched allow
-  */
+/**
+ * IsFilterRequest
+ * Regex Match With URL extension , if matched allow
+ */
 
-func IsFilterRequest(url string) bool  {
+func IsFilterRequest(url string) bool {
 	//read all the pattern and check if match
 	if apiConfigParsedData.RequestFilterEnabled {
-		isFiltered,_:=regexp.MatchString(".*\\.(" + apiConfig.Data.RequestFilterType + ")",url)
+		isFiltered, _ := regexp.MatchString(".*\\.("+apiConfig.Data.RequestFilterType+")", url)
 		return isFiltered
 	}
 	return false
@@ -61,28 +61,28 @@ func IsFilterRequest(url string) bool  {
  * if matched return true else false
  */
 
- func IsSkipUrl(url string) bool{
- 	if apiConfigParsedData.SkipURLEnabled{
- 		urlList:=strings.Split(apiConfig.Data.SkipURLLIST,",")
- 		for i:= range urlList{
-			isSkip,_:=regexp.MatchString(urlList[i],url)
+func IsSkipUrl(url string) bool {
+	if apiConfigParsedData.SkipURLEnabled {
+		urlList := strings.Split(apiConfig.Data.SkipURLLIST, ",")
+		for i := range urlList {
+			isSkip, _ := regexp.MatchString(urlList[i], url)
 			return isSkip
 		}
 	}
- 	return false
- }
+	return false
+}
 
- /*
-  * Uzmcr
-  * generate a header with name uzmcr
-  */
+/*
+ * Uzmcr
+ * generate a header with name uzmcr
+ */
 
-  func GetUzmcr(val string) string {
-  	uzmcr:=4
-  	ssresp,err:=strconv.Atoi(val)
-  	if err==nil{
-		randomNumber:=rand.Intn(100 - 1) + 1
-		uzmcr=(4*randomNumber)+ssresp
+func GetUzmcr(val string) string {
+	uzmcr := 4
+	ssresp, err := strconv.Atoi(val)
+	if err == nil {
+		randomNumber := rand.Intn(100-1) + 1
+		uzmcr = (4 * randomNumber) + ssresp
 	}
 	return strconv.Itoa(uzmcr)
-  }
+}
