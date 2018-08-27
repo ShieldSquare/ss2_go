@@ -67,9 +67,8 @@ log_path        :   Path where you wan to keep the log files.
 ========================================
 HOW TO USE ShieldSquare Go Connector.
 ========================================
-1. Copy the ss2_config.json and qscus.pem files which you got in the kit to /root/go/ directory.
-2. Open terminal in the source(src) folder of your project and execute the following line.
-    go get github.com/shieldsquare/ss2_go/
+1. Copy the ss2_config.json and qscus.pem files which you downloaded from ShieldSquare Dashboard to /root/go/ directory.
+2. Do 'go get github.com/shieldsquare/ss2_go/'
 3. Pass userid and call_type parameter to ValidateRequest()
 
     userid : Set the user-name/user-id/hash-value of the logged-in visitors to user. user is an optional parameter. Customer can leave it as empty string.
@@ -93,9 +92,9 @@ RESPONSE CODES
    -1  -> Error processing the Request by ShieldSquare module (usually occurs due to timeout)
 
 Example:-
-    call_type:=1
-    user:="sample user"
-    result,_:=ssapi.ValidateRequest(req,w,call_type,user,"$GOPATH/config.json");
+    call_type:= 1
+    user:= "sample user"
+    result,_:= ss2_go.ValidateRequest(req,call_type,w,user)
 
 
 Integration URL - http://integration.shieldsquare.com
