@@ -67,9 +67,10 @@ log_path        :   Path where you wan to keep the log files.
 ========================================
 HOW TO USE ShieldSquare Go Connector.
 ========================================
-1. Copy the ss2_config.json and qscus.pem files which you downloaded from ShieldSquare Dashboard to /root/go/ directory.
-2. Do 'go get github.com/shieldsquare/ss2_go/'
-3. Pass userid and call_type parameter to ValidateRequest()
+1. Declare an environment variable "PATH_TO_SS". This contains the path to the directory where you're going to store the files you downloaded from ShieldSquare Dashboard.
+2. Copy the ss2_config.json and ShieldsquareCABundle.pem files which you downloaded from ShieldSquare Dashboard to "PATH_TO_SS" directory which you declared earlier.
+3. Do 'go get github.com/shieldsquare/ss2_go/'
+4. Pass userid and call_type parameter to ValidateRequest()
 
     userid : Set the user-name/user-id/hash-value of the logged-in visitors to user. user is an optional parameter. Customer can leave it as empty string.
 
@@ -80,7 +81,7 @@ HOW TO USE ShieldSquare Go Connector.
     6 -> for a mobile APP
     7 -> for a feature phone
     =================================
-4. call function ValidateRequest in your request handler
+5. call function ValidateRequest in your request handler
 Note: ValidateRequest returns result which contain responsecode
 
 RESPONSE CODES

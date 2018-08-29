@@ -89,6 +89,7 @@ type APIVersion struct {
 type APIConfig struct {
 	Status string `json:"status"`
 	Data   struct {
+		ConfigDir            string `json:"_ss_config_dir"`
 		CallType             string `json:"_calltype"`
 		Mode                 string `json:"_mode"`
 		Sid                  string `json:"_sid"`
@@ -131,7 +132,11 @@ var (
 )
 
 func init() {
-	file, er := os.Open("/root/go/ss2_config.json")
+	configLoc := os.Getenv("PATH_TO_SS")
+	//configLoc = configLoc + "ss2_config.json"
+	//file, er := os.Open("/root/go/ss2_config.json")
+	file, er := os.Open(configLoc + "ss2_config.json")
+
 	if er != nil {
 		fmt.Println(er)
 	}
@@ -154,7 +159,10 @@ func createHTTPClient(timeout int, ssl bool) *http.Client {
 
 	transport := &http.Transport{}
 	if ssl {
-		Cert, err := ioutil.ReadFile("/root/go/qscus.pem")
+		certLoc := os.Getenv("PATH_TO_SS")
+		certLoc = certLoc + "ShieldsquareCABundle.pem"
+		//Cert, err := ioutil.ReadFile("/root/go/ShieldsquareCABundle.pem")
+		Cert, err := ioutil.ReadFile(certLoc)
 		if err != nil {
 			fmt.Println("Error in reading cert")
 		}
@@ -246,13 +254,23 @@ func IsPrivateSubnet(IpAddress net.IP) bool {
 func SplitIP(IPList string, Index int) string {
 
 	Ips := strings.Split(IPList, ",")
+	for i := 0; i < len(Ips); i++ {
+		Ips[i] = strings.Split(Ips[i], ":")[0]
+	}
+
 	Count := len(Ips)
 	if Count == 1 {
-		return IPList
+
+		return strings.Trim(IPList, ":")
 	}
 	if Index > 0 && Index <= Count {
 		if IsPrivateSubnet(net.ParseIP(Ips[Index-1])) == false {
 			return Ips[Index-1]
+		}
+	}
+	if Index == 0 {
+		if IsPrivateSubnet(net.ParseIP(Ips[Index])) == false {
+			return Ips[Index]
 		}
 	}
 	if Index > 0 {
@@ -261,7 +279,7 @@ func SplitIP(IPList string, Index int) string {
 				return Ips[i]
 			}
 		}
-	} else {
+	} else if Index < 0 {
 		for j := Count + Index; j >= 0; j-- {
 			if IsPrivateSubnet(net.ParseIP(Ips[j])) == false {
 				return Ips[j]
@@ -366,7 +384,7 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	}
 
 	if strings.Contains(apiConfig.Data.IPAddress, "Auto") {
-		userIP = net.IP.String(net.ParseIP(ip))
+		userIP = strings.Trim(net.IP.String(net.ParseIP(ip)), ":")
 	} else {
 		IPIndex, _ := strconv.Atoi(apiConfig.Data.IPIndex)
 		userIP = req.Header.Get(apiConfig.Data.IPAddress)
@@ -374,7 +392,7 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 			userIP = strings.Replace(userIP, " ", "", -1)
 			splitIP = SplitIP(userIP, IPIndex)
 		} else {
-			userIP = net.IP.String(net.ParseIP(ip))
+			userIP = strings.Trim(net.IP.String(net.ParseIP(ip)), ":")
 		}
 	}
 	if splitIP == "" {
@@ -509,7 +527,7 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	RemoteAddr, _, _ := net.SplitHostPort(req.RemoteAddr)
 	ssJsonObj.I0 = net.IP.String(net.ParseIP(RemoteAddr))
 	ssJsonObj.I1 = strings.Replace(req.Header.Get("X-Forwarded-For"), " ", "", -1)
-	ssJsonObj.I2 = req.Header.Get("HTTP_CLIENT_IP")
+	ssJsonObj.I2 = strings.Trim(req.Header.Get("HTTP_CLIENT_IP"), ":")
 	ssJsonObj.I3 = req.Header.Get("HTTP_X_FORWARDED_FOR")
 	ssJsonObj.I4 = req.Header.Get("x-real-ip")
 	ssJsonObj.I5 = req.Header.Get("HTTP_X_FORWARDED")
