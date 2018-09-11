@@ -89,7 +89,6 @@ type APIVersion struct {
 type APIConfig struct {
 	Status string `json:"status"`
 	Data   struct {
-		ConfigDir            string `json:"_ss_config_dir"`
 		CallType             string `json:"_calltype"`
 		Mode                 string `json:"_mode"`
 		Sid                  string `json:"_sid"`
@@ -116,6 +115,8 @@ type APIConfig struct {
 		RequestFilterEnabled string `json:"_content_filter"`
 		RequestFilterType    string `json:"_content_list"`
 		PostURL              string `json:"_posturl"`
+		MobileBlockEnabled   string `json:"_ss_mobile_block_enabled"`
+		MobileCaptchaEnabled string `json:"_ss_mobile_captcha_enabled"`
 		TrkEvent             string `json:"_trkevent"`
 	}
 }
@@ -579,7 +580,9 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 		}
 	}
 	if call_type == MOBILE {
-		w.Header().Add("_uzmcr", GetUzmcr(ss_Resp.Ssresp))
+		if (apiConfig.Data.MobileCaptchaEnabled == "True" && ss_Resp.Ssresp == "2") || (apiConfig.Data.MobileBlockEnabled == "True" && ss_Resp.Ssresp == "3") {
+			w.Header().Add("_uzmcr", GetUzmcr(ss_Resp.Ssresp))
+		}
 		if apiConfig.Data.PostURL != "" {
 			w.Header().Add("posturl", apiConfig.Data.PostURL)
 		}

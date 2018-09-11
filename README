@@ -96,6 +96,3 @@ Example:-
     call_type:= 1
     user:= "sample user"
     result,_:= ss2_go.ValidateRequest(req,call_type,w,user)
-
-
-Integration URL - http://integration.shieldsquare.com
