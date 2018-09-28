@@ -115,8 +115,6 @@ type APIConfig struct {
 		RequestFilterEnabled string `json:"_content_filter"`
 		RequestFilterType    string `json:"_content_list"`
 		PostURL              string `json:"_posturl"`
-		MobileBlockEnabled   string `json:"_ss_mobile_block_enabled"`
-		MobileCaptchaEnabled string `json:"_ss_mobile_captcha_enabled"`
 		TrkEvent             string `json:"_trkevent"`
 	}
 }
@@ -490,7 +488,7 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	ssJsonObj.Zpsbd3 = req.Referer()
 	ssJsonObj.Zpsbd4 = getScheme(req.TLS != nil) + req.Host + req.RequestURI //rethink
 	ssJsonObj.Zpsbd5 = Sessid
-	ssJsonObj.Zpsbd6 = userIP
+	ssJsonObj.Zpsbd6 = splitIP
 	ssJsonObj.Zpsbd7 = req.UserAgent()
 	ssJsonObj.Zpsbd8 = call_type
 	ssJsonObj.Zpsbd9 = user
@@ -540,7 +538,6 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	ssJsonObj.I11 = req.Header.Get("HTTP-Forwaded")
 	ssJsonObj.I12 = req.Header.Get("HTTP_VIA")
 	ssJsonObj.I13 = req.Header.Get("X-True-Client-IP")
-	ssJsonObj.IsplitIP = strings.TrimSpace(splitIP)
 	ssJsonObj.Ixff = SplitIP(ssJsonObj.I1, 1)
 
 	jsonObject, _ := json.Marshal(ssJsonObj)
@@ -580,7 +577,7 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 		}
 	}
 	if call_type == MOBILE {
-		if (apiConfig.Data.MobileCaptchaEnabled == "True" && ss_Resp.Ssresp == "2") || (apiConfig.Data.MobileBlockEnabled == "True" && ss_Resp.Ssresp == "3") {
+		if (apiConfig.Data.SSCaptchaEnabled == "True" && ss_Resp.Ssresp == "2") || (apiConfig.Data.SSBlockEnabled == "True" && ss_Resp.Ssresp == "3") {
 			w.Header().Add("_uzmcr", GetUzmcr(ss_Resp.Ssresp))
 		}
 		if apiConfig.Data.PostURL != "" {
@@ -700,7 +697,9 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		cssc := base64.StdEncoding.EncodeToString([]byte(StringReverse(ssJsonObj.Zpsbd1)))
 		return "ssa=" + cssa + "&ssb=" + cssb + "&ssc=" + cssc
 	}
-
+	if EmailID == "" {
+		EmailID = "contactus@shieldsquare.com"
+	}
 	Digits := "0123456789"
 	Chars := "abcdefghijk@lmnop"
 	CharDigits0 := "0123456789abcdef"
@@ -710,9 +709,6 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 	UzmaFirstPart := ""
 	UzmaSeconPart := ""
 	IPtoProcess := ssJsonObj.Zpsbd6
-	if len(ssJsonObj.IsplitIP) > 1 {
-		IPtoProcess = ssJsonObj.IsplitIP
-	}
 	if len(ssJsonObj.Uzma) <= 20 {
 		UzmaFirstPart = ssJsonObj.Uzma
 		UzmaSeconPart = ""
