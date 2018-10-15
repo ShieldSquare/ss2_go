@@ -116,6 +116,8 @@ type APIConfig struct {
 		RequestFilterType    string `json:"_content_list"`
 		PostURL              string `json:"_posturl"`
 		TrkEvent             string `json:"_trkevent"`
+		BlacklistHeaders     string `json:"_blacklist_headers"`
+		WhitelistHeaders     string `json:"_whitelist_headers"`
 	}
 }
 
@@ -503,11 +505,38 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	}
 
 	othHeaders := make(map[string]string)
-	for name, headers := range req.Header {
-		for _, h := range headers {
-			othHeaders[name] = h
+	blacklistHeaders := strings.Split(apiConfig.Data.BlacklistHeaders, ",")
+	whitelistHeaders := strings.Split(apiConfig.Data.WhitelistHeaders, ",")
+	if whitelistHeaders[0] == "" && blacklistHeaders[0] == "" {
+		for name, headers := range req.Header {
+			for _, h := range headers {
+				othHeaders[name] = h
+			}
 		}
 	}
+
+	if blacklistHeaders[0] != "" {
+		for name, headers := range req.Header {
+			for _, h := range headers {
+				othHeaders[name] = h
+			}
+		}
+
+		for _, blacklistHeaders := range blacklistHeaders {
+			delete(othHeaders, blacklistHeaders)
+		}
+	} else if whitelistHeaders[0] != "" {
+		for name, headers := range req.Header {
+			for _, h := range headers {
+				for i := 0; i < len(whitelistHeaders); i++ {
+					if whitelistHeaders[i] == name {
+						othHeaders[name] = h
+					}
+				}
+			}
+		}
+	}
+
 	if strings.Contains(apiConfig.Data.OtherHeaders, "True") {
 		othHjson, _ := json.Marshal(othHeaders)
 		ssJsonObj.Zpsbdx = string(othHjson)
@@ -519,7 +548,7 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	}
 	ssJsonObj.Zpsbdp = port
 
-	ssJsonObj.Zpsbdt = apiServer.ConnectorID
+	ssJsonObj.Zpsbdt = apiServer.ConnectorID + " 5.2.0"
 
 	// IP headers
 
