@@ -28,44 +28,44 @@ import (
 PayLoad generated for shieldsquare server to analysis
 */
 type SSJsonObj struct {
-	Zpsbd0   bool   `json:"_zpsbd0"`             //active /monitor
-	Zpsbd1   string `json:"_zpsbd1"`             //sid
-	Zpsbd2   string `json:"_zpsbd2"`             //pid
-	Zpsbd3   string `json:"_zpsbd3"`             //refer header
-	Zpsbd4   string `json:"_zpsbd4,omitempty"`   //absolute url
-	Zpsbd5   string `json:"_zpsbd5"`             //http cookie session cookie
-	Zpsbd6   string `json:"_zpsbd6"`             //ip address
-	Zpsbd7   string `json:"_zpsbd7"`             //user agent
-	Zpsbd8   int    `json:"_zpsbd8,omitempty"`   //call type
-	Zpsbd9   string `json:"_zpsbd9,omitempty"`   //user id
-	Zpsbda   int64  `json:"_zpsbda"`             //unix timestamp
-	Zpsbdxrw string `json:"_zpsbdxrw,omitempty"` // X-requested-with
-	Zpsbdm   string `json:"_zpsbdm,omitempy"`    //HTTP Method
-	Uzma     string `json:"__uzma"`              //cookie
-	Uzmb     string `json:"__uzmb"`              //unix timestamp
-	Uzmc     string `json:"__uzmc"`              //num of pages
-	Uzmd     string `json:"__uzmd"`              //unix timestamp
-	Uzme     string `json:"__uzme, omitempty"`
-	Idn      string `json:"idn"`                //Deployment number
-	Zpsbdx   string `json:"_zpsbdx, omitempty"` //Other Headers
-	Zpsbdp   int64  `json:"_zpsbp"`             // Remote Port
-	Zpsbdt   string `json:"_zpsbdt"`            //Connector Type
-	I0       string `json:"i0,omitempty"`       //Remote Addr
-	I1       string `json:"i1,omitempty"`       //X-Forwarded-For
-	I2       string `json:"i2,omitempty"`       //HTTP_CLIENT_IP
-	I3       string `json:"i3,omitempty"`       //HTTP_X_FORWARDED-For
-	I4       string `json:"i4,omitempty"`       //x-real-ip
-	I5       string `json:"i5,omitempty"`       //HTTP_X_FORWARDED
-	I6       string `json:"i6,omitempty"`       //Proxy-Client-IP
-	I7       string `json:"i7,omitempty"`       //WL-Proxy-Client-IP
-	I8       string `json:"i8,omitempty"`       //True-Client-IP
-	I9       string `json:"i9,omitempty"`       //HTTP_X_CLUSTER_CLIENT_IP
-	I10      string `json:"i10,omitempty"`      //HTTP_FORWARDED_FOR
-	I11      string `json:"i11,omitempty"`      //HTTP-Forwarded
-	I12      string `json:"i12,omitempty"`      //HTTP_VIA
-	I13      string `json:"i13,omitempty"`      //X-True-Client-IP
-	IsplitIP string `json:"iSplitIP,omitempty"` //Split IP
-	Ixff     string `json:"ixff,omitempty"`     //ixff
+	Zpsbd0   bool              `json:"_zpsbd0"`             //active /monitor
+	Zpsbd1   string            `json:"_zpsbd1"`             //sid
+	Zpsbd2   string            `json:"_zpsbd2"`             //pid
+	Zpsbd3   string            `json:"_zpsbd3"`             //refer header
+	Zpsbd4   string            `json:"_zpsbd4,omitempty"`   //absolute url
+	Zpsbd5   string            `json:"_zpsbd5"`             //http cookie session cookie
+	Zpsbd6   string            `json:"_zpsbd6"`             //ip address
+	Zpsbd7   string            `json:"_zpsbd7"`             //user agent
+	Zpsbd8   int               `json:"_zpsbd8,omitempty"`   //call type
+	Zpsbd9   string            `json:"_zpsbd9,omitempty"`   //user id
+	Zpsbda   int64             `json:"_zpsbda"`             //unix timestamp
+	Zpsbdxrw string            `json:"_zpsbdxrw,omitempty"` // X-requested-with
+	Zpsbdm   string            `json:"_zpsbdm,omitempy"`    //HTTP Method
+	Uzma     string            `json:"__uzma"`              //cookie
+	Uzmb     string            `json:"__uzmb"`              //unix timestamp
+	Uzmc     string            `json:"__uzmc"`              //num of pages
+	Uzmd     string            `json:"__uzmd"`              //unix timestamp
+	Uzme     string            `json:"__uzme, omitempty"`
+	Idn      string            `json:"idn"`                //Deployment number
+	Zpsbdx   map[string]string `json:"_zpsbdx, omitempty"` //Other Headers
+	Zpsbdp   int64             `json:"_zpsbp"`             // Remote Port
+	Zpsbdt   string            `json:"_zpsbdt"`            //Connector Type
+	I0       string            `json:"i0,omitempty"`       //Remote Addr
+	I1       string            `json:"i1,omitempty"`       //X-Forwarded-For
+	I2       string            `json:"i2,omitempty"`       //HTTP_CLIENT_IP
+	I3       string            `json:"i3,omitempty"`       //HTTP_X_FORWARDED-For
+	I4       string            `json:"i4,omitempty"`       //x-real-ip
+	I5       string            `json:"i5,omitempty"`       //HTTP_X_FORWARDED
+	I6       string            `json:"i6,omitempty"`       //Proxy-Client-IP
+	I7       string            `json:"i7,omitempty"`       //WL-Proxy-Client-IP
+	I8       string            `json:"i8,omitempty"`       //True-Client-IP
+	I9       string            `json:"i9,omitempty"`       //HTTP_X_CLUSTER_CLIENT_IP
+	I10      string            `json:"i10,omitempty"`      //HTTP_FORWARDED_FOR
+	I11      string            `json:"i11,omitempty"`      //HTTP-Forwarded
+	I12      string            `json:"i12,omitempty"`      //HTTP_VIA
+	I13      string            `json:"i13,omitempty"`      //X-True-Client-IP
+	IsplitIP string            `json:"iSplitIP,omitempty"` //Split IP
+	Ixff     string            `json:"ixff,omitempty"`     //ixff
 }
 
 type APIServer struct {
@@ -104,6 +104,7 @@ type APIConfig struct {
 		AsyncPost            string `json:"_async_http_post"`
 		SupportEmail         string `json:"_support_email"`
 		LogsEnabled          string `json:"_log_enabled"`
+		ServerLogsEnabled    string `json:"_server_log_enabled"`
 		OtherHeaders         string `json:"_other_headers"`
 		IPAddress            string `json:"_ipaddress"`
 		IPIndex              string `json:"_ip_index"`
@@ -191,6 +192,7 @@ func createHTTPClient(timeout int, ssl bool) *http.Client {
 type SS_service_resp struct {
 	Ssresp     string `json:"ssresp"`
 	Dynamic_js string `json:"dynamic_js"`
+	BotCode    string `json:"bot_code,omitempty"`
 }
 
 const ALLOW int = 0
@@ -316,9 +318,9 @@ func ss_api_poll(attr string) (string, bool) {
 	}
 }
 
-func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, user string) ([]byte, error) {
+func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]byte, error) {
 	ss_Resp := SS_service_resp{}
-	ss_Resp = SS_service_resp{strconv.Itoa(ALLOW_EXP), "var __uzdbm_c = 2+2"}
+	ss_Resp = SS_service_resp{strconv.Itoa(ALLOW_EXP), "var __uzdbm_c = 2+2", ""}
 
 	if time.Now().Unix()-last_Cfg_time > 300 {
 		response, status := ss_api_poll("/version")
@@ -342,20 +344,20 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 		}
 		last_Cfg_time = time.Now().Unix()
 	}
-
+	call_type, _ := strconv.Atoi(apiConfig.Data.CallType)
 	//initialization of variables
 	TimeNowSecs := time.Now().Unix()
 	Expiration := time.Now().Add(182 * 24 * time.Hour) //6 months
 
 	// Request Filter Check
 	if filter := IsFilterRequest(req.RequestURI); filter {
-		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2"}
+		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
 		return json.Marshal(ss_Resp)
 	}
 
 	// Skip Url Check
 	if skipurl := IsSkipUrl(getScheme(req.TLS != nil) + req.Host + req.RequestURI); skipurl {
-		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2"}
+		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
 		return json.Marshal(ss_Resp)
 	}
 
@@ -538,8 +540,8 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 	}
 
 	if strings.Contains(apiConfig.Data.OtherHeaders, "True") {
-		othHjson, _ := json.Marshal(othHeaders)
-		ssJsonObj.Zpsbdx = string(othHjson)
+		//othHjson, _ := json.Marshal(othHeaders)
+		ssJsonObj.Zpsbdx = othHeaders
 	}
 
 	port, err := strconv.ParseInt(Port, 10, 64)
@@ -577,14 +579,14 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 
 	if apiConfig.Data.Mode == "Monitor" && apiConfig.Data.AsyncPost == "True" {
 		Async_SendReq2SS(ss_service_url, jsonObject)
-		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2"}
+		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
 	} else {
 		ss_response := Sync_SendReq2SS(ss_service_url, jsonObject)
 		if ss_response != "" {
 			json.Unmarshal([]byte(ss_response), &ss_Resp)
-			ss_Resp = SS_service_resp{ss_Resp.Ssresp, ss_Resp.Dynamic_js}
+			ss_Resp = SS_service_resp{ss_Resp.Ssresp, ss_Resp.Dynamic_js, ss_Resp.BotCode}
 			Resp, err := strconv.Atoi(ss_Resp.Ssresp)
-			if Resp >= CAPTCHA && Resp <= BLOCK && err == nil {
+			if Resp >= CAPTCHA && Resp <= BLOCK && err == nil && call_type != MOBILE {
 				Query := getRedirectQueryParams(ssJsonObj, apiConfig.Data.SupportEmail, apiConfig.Data.RedirectDomain)
 				Type := ""
 				schema := "http://"
@@ -616,6 +618,11 @@ func ValidateRequest(req *http.Request, call_type int, w http.ResponseWriter, us
 			w.Header().Add("trkevent", apiConfig.Data.TrkEvent)
 		}
 	}
+
+	if apiConfigParsedData.SeverLogsEnabled && ss_Resp.BotCode != "" {
+		glog.V(2).Info("[ShieldSquare:error] --> ShieldSquare Response : ", ss_Resp.Ssresp, " Bot Category :", ss_Resp.BotCode)
+	}
+
 	glog.Flush()
 	return json.Marshal(ss_Resp)
 
@@ -718,7 +725,7 @@ func GenerateUUID() string {
 
 func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain string) string {
 
-	if strings.Compare(RedirDomain, "validate.perfdrive.com") != 0 {
+	if !strings.Contains(RedirDomain, "validate.perfdrive.com") {
 		cssa := url.QueryEscape(ssJsonObj.Zpsbd4)
 		InputDigest := ssJsonObj.Zpsbd1 + ssJsonObj.Zpsbd4
 		Digest := sha1.Sum([]byte(InputDigest))
@@ -726,6 +733,7 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		cssc := base64.StdEncoding.EncodeToString([]byte(StringReverse(ssJsonObj.Zpsbd1)))
 		return "ssa=" + cssa + "&ssb=" + cssb + "&ssc=" + cssc
 	}
+
 	if EmailID == "" {
 		EmailID = "contactus@shieldsquare.com"
 	}
@@ -798,4 +806,5 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		"&ssz=" + ssz
 
 	return query
+
 }
