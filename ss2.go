@@ -89,11 +89,11 @@ type APIVersion struct {
 type APIConfig struct {
 	Status string `json:"status"`
 	Data   struct {
-		CallType             string `json:"_calltype"`
-		Mode                 string `json:"_mode"`
-		Sid                  string `json:"_sid"`
-		SS2Domain            string `json:"_ss2_domain"`
-		SS2SslEnabled        string `json:"_api_server_ssl_enabled"`
+		CallType  string `json:"_calltype"`
+		Mode      string `json:"_mode"`
+		Sid       string `json:"_sid"`
+		SS2Domain string `json:"_ss2_domain"`
+		//SS2SslEnabled        string `json:"_api_server_ssl_enabled"`
 		SS2Timeout           string `json:"_timeout_value"`
 		Sessid               string `json:"_sessid"`
 		APIServerDomain      string `json:"_api_server_domain"`
@@ -338,6 +338,16 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 				json.Unmarshal([]byte(response), &apiConfig)
 				//write update for the config
 				UpdateApiConfigParsedData()
+
+				//updating configuration file.
+				if apiConfig.Data.APIServerDomain != apiServer.APIServerDomain || apiConfig.Data.APIServerTimeout != apiServer.APIServerTimeout || apiConfig.Data.APIServerSSL != apiServer.APIServerSSL {
+					apiServer.APIServerDomain = apiConfig.Data.APIServerDomain
+					apiServer.APIServerTimeout = apiConfig.Data.APIServerTimeout
+					apiServer.APIServerSSL = apiConfig.Data.APIServerSSL
+					filename := os.Getenv("PATH_TO_SS") + "ss2_config.json"
+					updatedJson, _ := json.Marshal(apiServer)
+					ioutil.WriteFile(filename, updatedJson, 0644)
+				}
 			} else {
 				return json.Marshal(ss_Resp)
 			}
@@ -540,7 +550,6 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	}
 
 	if strings.Contains(apiConfig.Data.OtherHeaders, "True") {
-		//othHjson, _ := json.Marshal(othHeaders)
 		ssJsonObj.Zpsbdx = othHeaders
 	}
 
