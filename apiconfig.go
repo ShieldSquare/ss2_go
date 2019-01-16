@@ -14,6 +14,8 @@ type ApiConfigParsedData struct {
 	LogsEnabled          bool
 	CallType             int
 	SeverLogsEnabled     bool
+	HTTPOnly             bool
+	Secure               bool
 }
 
 var apiConfigParsedData = ApiConfigParsedData{}
@@ -42,6 +44,20 @@ func UpdateApiConfigParsedData() {
 	isRequestFilter, err := strconv.ParseBool(apiConfig.Data.RequestFilterEnabled)
 	if err == nil {
 		apiConfigParsedData.RequestFilterEnabled = isRequestFilter
+	}
+
+	isHttpOnly, err := strconv.ParseBool(apiConfig.Data.HTTPOnly)
+	if err == nil {
+		apiConfigParsedData.HTTPOnly = isHttpOnly
+	} else {
+		apiConfigParsedData.HTTPOnly = false
+	}
+
+	isSecure, err := strconv.ParseBool(apiConfig.Data.Secure)
+	if err == nil {
+		apiConfigParsedData.Secure = isSecure
+	} else {
+		apiConfigParsedData.Secure = false
 	}
 
 }

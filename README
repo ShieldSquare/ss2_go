@@ -3,7 +3,7 @@ SHIELDSQUARE GO LANG INTEGRATION GUIDE
 ========================================
 
 ========================================
-Version: Go Language connector V-5.2.0
+Version: Go Language connector V-5.2.2
 ========================================
 
 ========================================
@@ -93,6 +93,5 @@ RESPONSE CODES
    -1  -> Error processing the Request by ShieldSquare module (usually occurs due to timeout)
 
 Example:-
-    call_type:= 1
     user:= "sample user"
     result,_:= ss2_go.ValidateRequest(req,call_type,w,user)

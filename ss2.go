@@ -77,6 +77,7 @@ type APIServer struct {
 	DeploymentNumber string      `json:"deployment_number"`
 	Domain           interface{} `json:"domain"`
 	LogPath          string      `json:"log_dir"`
+	DebugLog         string      `json:"debug_log,omitempty"`
 }
 
 type APIVersion struct {
@@ -104,6 +105,7 @@ type APIConfig struct {
 		AsyncPost            string `json:"_async_http_post"`
 		SupportEmail         string `json:"_support_email"`
 		LogsEnabled          string `json:"_log_enabled"`
+		LogLevel             string `json:"_loglevel"`
 		ServerLogsEnabled    string `json:"_server_log_enabled"`
 		OtherHeaders         string `json:"_other_headers"`
 		IPAddress            string `json:"_ipaddress"`
@@ -119,7 +121,20 @@ type APIConfig struct {
 		TrkEvent             string `json:"_trkevent"`
 		BlacklistHeaders     string `json:"_blacklist_headers"`
 		WhitelistHeaders     string `json:"_whitelist_headers"`
+		HTTPOnly             string `json:"_is_httponly"`
+		Secure               string `json:"_is_secure"`
 	}
+}
+
+type SIEM_JSON struct {
+	IP           string
+	UA           string
+	URL          string
+	Referrer     string
+	Session      string
+	Username     string
+	ResponseTime int64
+	Error        string
 }
 
 var apiServer = APIServer{}
@@ -132,6 +147,8 @@ var last_Version uint64
 var (
 	httpClient *http.Client
 )
+
+var errorDesc string
 
 func init() {
 	configLoc := os.Getenv("PATH_TO_SS")
@@ -319,10 +336,15 @@ func ss_api_poll(attr string) (string, bool) {
 }
 
 func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]byte, error) {
+	var sendTime int64
+	var recTime int64
+	var respTime int64
+	var debug_time int64
+	debug_time, err := strconv.ParseInt(apiServer.DebugLog, 10, 64)
 	ss_Resp := SS_service_resp{}
 	ss_Resp = SS_service_resp{strconv.Itoa(ALLOW_EXP), "var __uzdbm_c = 2+2", ""}
 
-	if time.Now().Unix()-last_Cfg_time > 300 {
+	if time.Now().Unix()-last_Cfg_time > 300 || (err == nil && time.Now().Unix()-last_Cfg_time > debug_time) {
 		response, status := ss_api_poll("/version")
 		if status {
 			err := json.Unmarshal([]byte(response), &apiVersion)
@@ -424,7 +446,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			//create new cookie
 			uuid, _ := uuid.NewV4()
 			ssJsonObj.Uzme = uuid.String()
-			E := http.Cookie{Name: "__uzme", Value: ssJsonObj.Uzme, Expires: Expiration}
+			E := http.Cookie{Name: "__uzme", Value: ssJsonObj.Uzme, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
 			http.SetCookie(w, &E)
 		} else {
 			ssJsonObj.Uzme = cookieE.Value
@@ -445,7 +467,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			glog.V(2).Info("[ShieldSquare:error] --> error while getting cookie : ")
 		}
 	} else {
-		if len(cookieB.Value) != 10 || IsDigit(cookieB.Value) == false || len(cookieC.Value) < 12 || IsDigit(cookieC.Value) == false || len(cookieD.Value) != 10 || IsDigit(cookieD.Value) == false {
+		if len(cookieB.Value) != 10 || IsDigit(cookieB.Value) == false || len(cookieC.Value) < 12 || IsDigit(cookieC.Value) == false || len(cookieD.Value) != 10 || IsDigit(cookieD.Value) == false || len(cookieA.Value) != 36 {
 			cookieTampered = true
 			uzmc_val = GenerateUzmc(0)
 		} else {
@@ -466,8 +488,8 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		ssJsonObj.Uzma = uuid.String()
 		ssJsonObj.Uzmb = strconv.FormatInt(TimeNowSecs, 10)
 
-		A := http.Cookie{Name: "__uzma", Value: ssJsonObj.Uzma, Expires: Expiration}
-		B := http.Cookie{Name: "__uzmb", Value: ssJsonObj.Uzmb, Expires: Expiration}
+		A := http.Cookie{Name: "__uzma", Value: ssJsonObj.Uzma, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
+		B := http.Cookie{Name: "__uzmb", Value: ssJsonObj.Uzmb, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
 
 		http.SetCookie(w, &A)
 		http.SetCookie(w, &B)
@@ -478,8 +500,8 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	ssJsonObj.Uzmc = uzmc_val
 	ssJsonObj.Uzmd = strconv.FormatInt(TimeNowSecs, 10)
 
-	C := http.Cookie{Name: "__uzmc", Value: ssJsonObj.Uzmc, Expires: Expiration}
-	D := http.Cookie{Name: "__uzmd", Value: ssJsonObj.Uzmd, Expires: Expiration}
+	C := http.Cookie{Name: "__uzmc", Value: ssJsonObj.Uzmc, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
+	D := http.Cookie{Name: "__uzmd", Value: ssJsonObj.Uzmd, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
 
 	http.SetCookie(w, &C)
 	http.SetCookie(w, &D)
@@ -587,10 +609,17 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	fmt.Println(string(jsonObject))
 
 	if apiConfig.Data.Mode == "Monitor" && apiConfig.Data.AsyncPost == "True" {
+		sendTime = time.Now().UnixNano() / int64(time.Millisecond)
 		Async_SendReq2SS(ss_service_url, jsonObject)
+		recTime = time.Now().UnixNano() / int64(time.Millisecond)
+		respTime = recTime - sendTime
+
 		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
 	} else {
+		sendTime = time.Now().UnixNano() / int64(time.Millisecond)
 		ss_response := Sync_SendReq2SS(ss_service_url, jsonObject)
+		recTime = time.Now().UnixNano() / int64(time.Millisecond)
+		respTime = recTime - sendTime
 		if ss_response != "" {
 			json.Unmarshal([]byte(ss_response), &ss_Resp)
 			ss_Resp = SS_service_resp{ss_Resp.Ssresp, ss_Resp.Dynamic_js, ss_Resp.BotCode}
@@ -628,8 +657,13 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		}
 	}
 
-	if apiConfigParsedData.SeverLogsEnabled && ss_Resp.BotCode != "" {
-		glog.V(2).Info("[ShieldSquare:error] --> ShieldSquare Response : ", ss_Resp.Ssresp, " Bot Category :", ss_Resp.BotCode)
+	if apiConfigParsedData.SeverLogsEnabled {
+		log := SIEM_JSON{ssJsonObj.Zpsbd6, ssJsonObj.Zpsbd7, ssJsonObj.Zpsbd4, ssJsonObj.Zpsbd3, ssJsonObj.Zpsbd5, ssJsonObj.Zpsbd9, respTime, errorDesc}
+		logLevel := "debug"
+		if apiConfig.Data.LogLevel != "" {
+			logLevel = apiConfig.Data.LogLevel
+		}
+		printSIEM(log, logLevel)
 	}
 
 	glog.Flush()
@@ -649,8 +683,11 @@ func Sync_SendReq2SS(ss_service_url string, jsonObject []byte) string {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK {
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
 		fmt.Println(string(body))
+		if err != nil {
+			errorDesc = string(err.Error())
+		}
 		return string(body)
 	} else {
 		// Log proper error
@@ -668,6 +705,7 @@ func Async_SendReq2SS(ss_service_url string, jsonObject []byte) {
 		resp, err := httpClient.Do(req)
 		if err != nil {
 			if apiConfigParsedData.LogsEnabled == true {
+				errorDesc = string(err.Error())
 				glog.V(2).Info("[ShieldSquare:error] --> async_post error ", err)
 			}
 		}
@@ -815,5 +853,24 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		"&ssz=" + ssz
 
 	return query
+
+}
+
+func printSIEM(siem_json SIEM_JSON, log_level string) {
+	siemLog, err := json.Marshal(siem_json)
+	if err != nil {
+		glog.V(2).Info("[ShieldSquare:error] --> Error while creating SIEM Log")
+	}
+	if strings.ToLower(log_level) == "info" {
+		glog.V(2).Info("[ShieldSquare:info] --> SIEM Log : \n", string(siemLog))
+	} else if strings.ToLower(log_level) == "debug" {
+		glog.V(2).Info("[ShieldSquare:debug] --> SIEM Log : \n", string(siemLog))
+	} else if strings.ToLower(log_level) == "warn" {
+		glog.V(2).Info("[ShieldSquare:warn] --> SIEM Log : \n", string(siemLog))
+	} else if strings.ToLower(log_level) == "error" {
+		glog.V(2).Info("[ShieldSquare:error] --> SIEM Log : \n", string(siemLog))
+	} else if strings.ToLower(log_level) == "notice" {
+		glog.V(2).Info("[ShieldSquare:notice] --> SIEM Log : \n", string(siemLog))
+	}
 
 }
