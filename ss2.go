@@ -834,7 +834,7 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 	ssn := RandomString(8, CharDigits0) + DigestStr[0:20] + RandomString(8, CharDigits0) + UzmaFirstPart + RandomString(5, CharDigits0)
 	sso := RandomString(5, CharDigits0) + UzmaSeconPart + RandomString(8, CharDigits0) + DigestStr[20:40] + RandomString(8, CharDigits0)
 
-	ssp := RandomString(10, Digits) + ssJsonObj.Uzmb[0:5] + RandomString(5, Digits) + ssJsonObj.Uzmd[5:5] + RandomString(10, Digits)
+	ssp := RandomString(10, Digits) + ssJsonObj.Uzmb[0:5] + RandomString(5, Digits) + ssJsonObj.Uzmd[0:5] + RandomString(10, Digits)
 	ssq := RandomString(7, Digits) + ssJsonObj.Uzmb[5:10] + RandomString(9, Digits) + ssJsonObj.Uzmd[5:10] + RandomString(15, Digits)
 
 	ssr := base64.StdEncoding.EncodeToString([]byte(IPtoProcess))
