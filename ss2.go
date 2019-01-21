@@ -113,6 +113,7 @@ type APIConfig struct {
 		EndPointSSL          string `json:"_enable_ssl"`
 		Version              string `json:"_version"`
 		RedirectDomain       string `json:"_redirect_domain"`
+		DefRedirectDomain    string `json:"_d_redirect_domain"`
 		SkipURL              string `json:"_skip_url"`
 		SkipURLLIST          string `json:"_skip_url_list"`
 		RequestFilterEnabled string `json:"_content_filter"`
@@ -775,7 +776,7 @@ func GenerateUUID() string {
 
 func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain string) string {
 
-	if !strings.Contains(RedirDomain, "validate.perfdrive.com") {
+	if !strings.Contains(RedirDomain, strings.Trim(apiConfig.Data.DefRedirectDomain, "")) {
 		cssa := url.QueryEscape(ssJsonObj.Zpsbd4)
 		InputDigest := ssJsonObj.Zpsbd1 + ssJsonObj.Zpsbd4
 		Digest := sha1.Sum([]byte(InputDigest))
