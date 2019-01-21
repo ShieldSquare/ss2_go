@@ -46,13 +46,6 @@ func UpdateApiConfigParsedData() {
 		apiConfigParsedData.RequestFilterEnabled = isRequestFilter
 	}
 
-	isHttpOnly, err := strconv.ParseBool(apiConfig.Data.HTTPOnly)
-	if err == nil {
-		apiConfigParsedData.HTTPOnly = isHttpOnly
-	} else {
-		apiConfigParsedData.HTTPOnly = false
-	}
-
 	isSecure, err := strconv.ParseBool(apiConfig.Data.Secure)
 	if err == nil {
 		apiConfigParsedData.Secure = isSecure

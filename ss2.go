@@ -48,7 +48,7 @@ type SSJsonObj struct {
 	Uzme     string            `json:"__uzme, omitempty"`
 	Idn      string            `json:"idn"`                //Deployment number
 	Zpsbdx   map[string]string `json:"_zpsbdx, omitempty"` //Other Headers
-	Zpsbdp   int64             `json:"_zpsbp"`             // Remote Port
+	Zpsbdp   int64             `json:"_zpsbdp"`            // Remote Port
 	Zpsbdt   string            `json:"_zpsbdt"`            //Connector Type
 	I0       string            `json:"i0,omitempty"`       //Remote Addr
 	I1       string            `json:"i1,omitempty"`       //X-Forwarded-For
@@ -121,7 +121,6 @@ type APIConfig struct {
 		TrkEvent             string `json:"_trkevent"`
 		BlacklistHeaders     string `json:"_blacklist_headers"`
 		WhitelistHeaders     string `json:"_whitelist_headers"`
-		HTTPOnly             string `json:"_is_httponly"`
 		Secure               string `json:"_is_secure"`
 	}
 }
@@ -294,11 +293,14 @@ func SplitIP(IPList string, Index int) string {
 		}
 	}
 	if Index > 0 {
-		for i := Index; Index < Count; i++ {
+		rightIP := ""
+		for i := Index; i < Count; i++ {
 			if IsPrivateSubnet(net.ParseIP(Ips[i])) == false {
-				return Ips[i]
+				rightIP = Ips[i]
+				break
 			}
 		}
+		return rightIP
 	} else if Index < 0 {
 		for j := Count + Index; j >= 0; j-- {
 			if IsPrivateSubnet(net.ParseIP(Ips[j])) == false {
@@ -430,9 +432,6 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			userIP = strings.Trim(net.IP.String(net.ParseIP(ip)), ":")
 		}
 	}
-	if splitIP == "" {
-		splitIP = userIP
-	}
 
 	cookieA, errA := req.Cookie("__uzma")
 	cookieB, errB := req.Cookie("__uzmb")
@@ -446,7 +445,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			//create new cookie
 			uuid, _ := uuid.NewV4()
 			ssJsonObj.Uzme = uuid.String()
-			E := http.Cookie{Name: "__uzme", Value: ssJsonObj.Uzme, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
+			E := http.Cookie{Name: "__uzme", Value: ssJsonObj.Uzme, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
 			http.SetCookie(w, &E)
 		} else {
 			ssJsonObj.Uzme = cookieE.Value
@@ -488,8 +487,8 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		ssJsonObj.Uzma = uuid.String()
 		ssJsonObj.Uzmb = strconv.FormatInt(TimeNowSecs, 10)
 
-		A := http.Cookie{Name: "__uzma", Value: ssJsonObj.Uzma, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
-		B := http.Cookie{Name: "__uzmb", Value: ssJsonObj.Uzmb, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
+		A := http.Cookie{Name: "__uzma", Value: ssJsonObj.Uzma, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
+		B := http.Cookie{Name: "__uzmb", Value: ssJsonObj.Uzmb, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
 
 		http.SetCookie(w, &A)
 		http.SetCookie(w, &B)
@@ -500,8 +499,8 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	ssJsonObj.Uzmc = uzmc_val
 	ssJsonObj.Uzmd = strconv.FormatInt(TimeNowSecs, 10)
 
-	C := http.Cookie{Name: "__uzmc", Value: ssJsonObj.Uzmc, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
-	D := http.Cookie{Name: "__uzmd", Value: ssJsonObj.Uzmd, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: apiConfigParsedData.HTTPOnly}
+	C := http.Cookie{Name: "__uzmc", Value: ssJsonObj.Uzmc, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
+	D := http.Cookie{Name: "__uzmd", Value: ssJsonObj.Uzmd, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
 
 	http.SetCookie(w, &C)
 	http.SetCookie(w, &D)
