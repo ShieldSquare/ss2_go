@@ -422,6 +422,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 
 	if strings.Contains(apiConfig.Data.IPAddress, "Auto") {
 		userIP = strings.Trim(net.IP.String(net.ParseIP(ip)), ":")
+		splitIP = userIP
 	} else {
 		IPIndex, _ := strconv.Atoi(apiConfig.Data.IPIndex)
 		userIP = req.Header.Get(apiConfig.Data.IPAddress)
@@ -430,6 +431,9 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			splitIP = SplitIP(userIP, IPIndex)
 		} else {
 			userIP = strings.Trim(net.IP.String(net.ParseIP(ip)), ":")
+			if splitIP == "" {
+				splitIP = userIP
+			}
 		}
 	}
 
