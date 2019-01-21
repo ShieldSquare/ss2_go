@@ -580,7 +580,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	}
 	ssJsonObj.Zpsbdp = port
 
-	ssJsonObj.Zpsbdt = apiServer.ConnectorID + " 5.2.1"
+	ssJsonObj.Zpsbdt = apiServer.ConnectorID + " 5.2.3"
 
 	// IP headers
 
