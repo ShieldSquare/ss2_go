@@ -613,11 +613,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	fmt.Println(string(jsonObject))
 
 	if apiConfig.Data.Mode == "Monitor" && apiConfig.Data.AsyncPost == "True" {
-		sendTime = time.Now().UnixNano() / int64(time.Millisecond)
 		Async_SendReq2SS(ss_service_url, jsonObject)
-		recTime = time.Now().UnixNano() / int64(time.Millisecond)
-		respTime = recTime - sendTime
-
 		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
 	} else {
 		sendTime = time.Now().UnixNano() / int64(time.Millisecond)
@@ -661,7 +657,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		}
 	}
 
-	if apiConfigParsedData.SeverLogsEnabled {
+	if apiConfigParsedData.SeverLogsEnabled && apiConfig.Data.Mode == "Active" {
 		log := SIEM_JSON{ssJsonObj.Zpsbd6, ssJsonObj.Zpsbd7, ssJsonObj.Zpsbd4, ssJsonObj.Zpsbd3, ssJsonObj.Zpsbd5, ssJsonObj.Zpsbd9, respTime, errorDesc}
 		logLevel := "debug"
 		if apiConfig.Data.LogLevel != "" {
