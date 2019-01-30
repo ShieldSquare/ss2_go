@@ -867,7 +867,7 @@ func printSIEM(siem_json SIEM_JSON, log_level string) {
 		glog.V(2).Info("[ShieldSquare:debug] --> SIEM Log : \n", string(siemLog))
 	} else if strings.ToLower(log_level) == "warn" {
 		glog.V(2).Info("[ShieldSquare:warn] --> SIEM Log : \n", string(siemLog))
-	} else if strings.ToLower(log_level) == "error" {
+	} else if strings.ToLower(log_level) == "err" {
 		glog.V(2).Info("[ShieldSquare:error] --> SIEM Log : \n", string(siemLog))
 	} else if strings.ToLower(log_level) == "notice" {
 		glog.V(2).Info("[ShieldSquare:notice] --> SIEM Log : \n", string(siemLog))
