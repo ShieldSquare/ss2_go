@@ -5,7 +5,7 @@ import (
 )
 
 /**
- *Holds all the paresed config other than string
+ *Holds all the parsed config other than string
  */
 
 type ApiConfigParsedData struct {

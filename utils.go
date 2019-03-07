@@ -25,7 +25,7 @@ func StringReverse(s string) string {
  * If regex matched with url return the sid and call type associated to that regex
  */
 
-func Check_GetMultiSite(url string) (bool, []string) {
+func CheckGetmultisite(url string) (bool, []string) {
 	multisite := make([]string, 2)
 	if apiServer.Domain != nil {
 		domains := apiServer.Domain.(map[string]interface{})

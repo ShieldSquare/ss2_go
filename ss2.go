@@ -126,7 +126,7 @@ type APIConfig struct {
 	}
 }
 
-type SIEM_JSON struct {
+type siemJson struct {
 	IP           string
 	UA           string
 	URL          string
@@ -141,8 +141,8 @@ var apiServer = APIServer{}
 var apiVersion = APIVersion{}
 var apiConfig = APIConfig{}
 var ssJsonObj = SSJsonObj{}
-var last_Cfg_time int64
-var last_Version uint64
+var lastCfgTime int64
+var lastVersion uint64
 
 var (
 	httpClient *http.Client
@@ -206,18 +206,16 @@ func createHTTPClient(timeout int, ssl bool) *http.Client {
 	return client
 }
 
-type SS_service_resp struct {
-	Ssresp     string `json:"ssresp"`
-	Dynamic_js string `json:"dynamic_js"`
-	BotCode    string `json:"bot_code,omitempty"`
+type SsServiceResp struct {
+	Ssresp    string `json:"ssresp"`
+	DynamicJs string `json:"dynamic_js"`
+	BotCode   string `json:"bot_code,omitempty"`
 }
 
 const ALLOW int = 0
-const MONITOR int = 1
 const CAPTCHA int = 2
 const BLOCK int = 3
-const FFD int = 4
-const ALLOW_EXP int = -1
+const ALLOWEXP int = -1
 const MOBILE int = 6
 
 type IpRange struct {
@@ -226,35 +224,35 @@ type IpRange struct {
 }
 
 var PrivateRanges = []IpRange{
-	IpRange{
+	{
 		min: net.ParseIP("10.0.0.0"),
 		max: net.ParseIP("10.255.255.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("172.16.0.0"),
 		max: net.ParseIP("172.31.255.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("192.0.0.0"),
 		max: net.ParseIP("192.0.0.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("192.168.0.0"),
 		max: net.ParseIP("192.168.255.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("198.18.0.0"),
 		max: net.ParseIP("198.19.255.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("127.0.0.0"),
 		max: net.ParseIP("127.255.255.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("100.64.0.0"),
 		max: net.ParseIP("100.127.255.255"),
 	},
-	IpRange{
+	{
 		min: net.ParseIP("0.0.0.0"),
 		max: net.ParseIP("0.255.255.255"),
 	},
@@ -312,7 +310,7 @@ func SplitIP(IPList string, Index int) string {
 	return IPList
 }
 
-func ss_api_poll(attr string) (string, bool) {
+func ssApiPoll(attr string) (string, bool) {
 
 	ssl, _ := strconv.ParseBool(apiServer.APIServerSSL)
 	schema := "http://"
@@ -327,7 +325,8 @@ func ss_api_poll(attr string) (string, bool) {
 	if err != nil {
 		// panic(err)
 		fmt.Println(err)
-		//return "", false
+
+		return "", false
 	}
 	defer response.Body.Close()
 	resp, _ := ioutil.ReadAll(response.Body)
@@ -342,23 +341,23 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	var sendTime int64
 	var recTime int64
 	var respTime int64
-	var debug_time int64
-	debug_time, err := strconv.ParseInt(apiServer.DebugLog, 10, 64)
-	ss_Resp := SS_service_resp{}
-	ss_Resp = SS_service_resp{strconv.Itoa(ALLOW_EXP), "var __uzdbm_c = 2+2", ""}
+	var debugTime int64
+	debugTime, err := strconv.ParseInt(apiServer.DebugLog, 10, 64)
+	ssResp := SsServiceResp{}
+	ssResp = SsServiceResp{strconv.Itoa(ALLOWEXP), "var __uzdbm_c = 2+2", ""}
 
-	if time.Now().Unix()-last_Cfg_time > 300 || (err == nil && time.Now().Unix()-last_Cfg_time > debug_time) {
-		response, status := ss_api_poll("/version")
+	if time.Now().Unix()-lastCfgTime > 300 || (err == nil && time.Now().Unix()-lastCfgTime > debugTime) {
+		response, status := ssApiPoll("/version")
 		if status {
 			err := json.Unmarshal([]byte(response), &apiVersion)
 			fmt.Println(err)
 		} else {
-			return json.Marshal(ss_Resp)
+			return json.Marshal(ssResp)
 		}
-		curr_Version, _ := strconv.ParseUint(apiVersion.Data.Version, 10, 64)
-		if curr_Version > last_Version {
-			last_Version = curr_Version
-			response, status = ss_api_poll("/configuration")
+		currVersion, _ := strconv.ParseUint(apiVersion.Data.Version, 10, 64)
+		if currVersion > lastVersion {
+			lastVersion = currVersion
+			response, status = ssApiPoll("/configuration")
 			if status {
 				json.Unmarshal([]byte(response), &apiConfig)
 				//write update for the config
@@ -374,34 +373,34 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 					ioutil.WriteFile(filename, updatedJson, 0644)
 				}
 			} else {
-				return json.Marshal(ss_Resp)
+				return json.Marshal(ssResp)
 			}
 		}
-		last_Cfg_time = time.Now().Unix()
+		lastCfgTime = time.Now().Unix()
 	}
-	call_type, _ := strconv.Atoi(apiConfig.Data.CallType)
+	callType, _ := strconv.Atoi(apiConfig.Data.CallType)
 	//initialization of variables
 	TimeNowSecs := time.Now().Unix()
 	Expiration := time.Now().Add(182 * 24 * time.Hour) //6 months
 
 	// Request Filter Check
 	if filter := IsFilterRequest(req.RequestURI); filter {
-		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
-		return json.Marshal(ss_Resp)
+		ssResp = SsServiceResp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
+		return json.Marshal(ssResp)
 	}
 
 	// Skip Url Check
 	if skipurl := IsSkipUrl(getScheme(req.TLS != nil) + req.Host + req.RequestURI); skipurl {
-		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
-		return json.Marshal(ss_Resp)
+		ssResp = SsServiceResp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
+		return json.Marshal(ssResp)
 	}
 
-	// multisite check Pradeep
+	//Multi-site check
 	domainSID := strings.ToLower(apiConfig.Data.Sid)
-	isMatch, sidType := Check_GetMultiSite(getScheme(req.TLS != nil) + req.Host + req.RequestURI)
+	isMatch, sidType := CheckGetmultisite(getScheme(req.TLS != nil) + req.Host + req.RequestURI)
 	if isMatch {
 		domainSID = sidType[0]
-		call_type, _ = strconv.Atoi(sidType[1])
+		callType, _ = strconv.Atoi(sidType[1])
 	}
 
 	ssl, _ := strconv.ParseBool(apiConfig.Data.APIServerSSL)
@@ -410,9 +409,9 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		schema = "https://"
 	}
 
-	ss_service_url := schema + apiConfig.Data.APIServerDomain + "/getRequestData"
+	ssServiceUrl := schema + apiConfig.Data.APIServerDomain + "/getRequestData"
 	if apiConfigParsedData.LogsEnabled == true {
-		glog.V(2).Info("[ShieldSquare:info] --> ss service url : ", ss_service_url)
+		glog.V(2).Info("[ShieldSquare:info] --> ss service url : ", ssServiceUrl)
 	}
 	ip, Port, _ := net.SplitHostPort(req.RemoteAddr)
 	userIP := ""
@@ -443,13 +442,13 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	cookieC, errC := req.Cookie("__uzmc")
 	cookieD, errD := req.Cookie("__uzmd")
 
-	if call_type == MOBILE {
+	if callType == MOBILE {
 		cookieE, errE := req.Cookie("__uzme")
 		//if cookie not present
 		if errE != nil {
 			//create new cookie
-			uuid, _ := uuid.NewV4()
-			ssJsonObj.Uzme = uuid.String()
+			UUID, _ := uuid.NewV4()
+			ssJsonObj.Uzme = UUID.String()
 			E := http.Cookie{Name: "__uzme", Value: ssJsonObj.Uzme, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
 			http.SetCookie(w, &E)
 		} else {
@@ -461,35 +460,35 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 
 	cookieAbsent := false
 	cookieTampered := false
-	uzmc_val := ""
+	uzmcVal := ""
 	uzmcCounter := 0
 
 	if errA != nil || errB != nil || errC != nil || errD != nil {
 		cookieAbsent = true
-		uzmc_val = GenerateUzmc(0)
+		uzmcVal = GenerateUzmc(0)
 		if apiConfigParsedData.LogsEnabled == true {
 			glog.V(2).Info("[ShieldSquare:error] --> error while getting cookie : ")
 		}
 	} else {
 		if len(cookieB.Value) != 10 || IsDigit(cookieB.Value) == false || len(cookieC.Value) < 12 || IsDigit(cookieC.Value) == false || len(cookieD.Value) != 10 || IsDigit(cookieD.Value) == false || len(cookieA.Value) != 36 {
 			cookieTampered = true
-			uzmc_val = GenerateUzmc(0)
+			uzmcVal = GenerateUzmc(0)
 		} else {
 			uzmcSequence, _ := strconv.Atoi(cookieC.Value[5 : len(cookieC.Value)-5])
 			uzmcCounter = (uzmcSequence - 7) / 3
-			uzmc_val = GenerateUzmc(uzmcCounter)
+			uzmcVal = GenerateUzmc(uzmcCounter)
 		}
 	}
 
 	if cookieAbsent || cookieTampered {
-		uuid, err := uuid.NewV4()
+		uuidVar, err := uuid.NewV4()
 		if err != nil {
 			if apiConfigParsedData.LogsEnabled == true {
-				glog.V(2).Info("[ShieldSquare : error] --> uuid generation failed")
+				glog.V(2).Info("[ShieldSquare : error] --> uuidVar generation failed")
 			}
 		}
 
-		ssJsonObj.Uzma = uuid.String()
+		ssJsonObj.Uzma = uuidVar.String()
 		ssJsonObj.Uzmb = strconv.FormatInt(TimeNowSecs, 10)
 
 		A := http.Cookie{Name: "__uzma", Value: ssJsonObj.Uzma, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
@@ -501,7 +500,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		ssJsonObj.Uzma = cookieA.Value
 		ssJsonObj.Uzmb = cookieB.Value
 	}
-	ssJsonObj.Uzmc = uzmc_val
+	ssJsonObj.Uzmc = uzmcVal
 	ssJsonObj.Uzmd = strconv.FormatInt(TimeNowSecs, 10)
 
 	C := http.Cookie{Name: "__uzmc", Value: ssJsonObj.Uzmc, Expires: Expiration, Secure: apiConfigParsedData.Secure, HttpOnly: true}
@@ -530,7 +529,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	ssJsonObj.Zpsbd5 = Sessid
 	ssJsonObj.Zpsbd6 = splitIP
 	ssJsonObj.Zpsbd7 = req.UserAgent()
-	ssJsonObj.Zpsbd8 = call_type
+	ssJsonObj.Zpsbd8 = callType
 	ssJsonObj.Zpsbd9 = user
 	ssJsonObj.Zpsbda = TimeNowSecs
 
@@ -613,30 +612,30 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	fmt.Println(string(jsonObject))
 
 	if apiConfig.Data.Mode == "Monitor" && apiConfig.Data.AsyncPost == "True" {
-		Async_SendReq2SS(ss_service_url, jsonObject)
-		ss_Resp = SS_service_resp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
+		AsyncSendreq2ss(ssServiceUrl, jsonObject)
+		ssResp = SsServiceResp{strconv.Itoa(ALLOW), "var __uzdbm_c = 2+2", ""}
 	} else {
 		sendTime = time.Now().UnixNano() / int64(time.Millisecond)
-		ss_response := Sync_SendReq2SS(ss_service_url, jsonObject)
+		ssResponse := SyncSendreq2ss(ssServiceUrl, jsonObject)
 		recTime = time.Now().UnixNano() / int64(time.Millisecond)
 		respTime = recTime - sendTime
-		if ss_response != "" {
-			json.Unmarshal([]byte(ss_response), &ss_Resp)
-			ss_Resp = SS_service_resp{ss_Resp.Ssresp, ss_Resp.Dynamic_js, ss_Resp.BotCode}
-			Resp, err := strconv.Atoi(ss_Resp.Ssresp)
-			if Resp >= CAPTCHA && Resp <= BLOCK && err == nil && call_type != MOBILE {
+		if ssResponse != "" {
+			json.Unmarshal([]byte(ssResponse), &ssResp)
+			ssResp = SsServiceResp{ssResp.Ssresp, ssResp.DynamicJs, ssResp.BotCode}
+			Resp, err := strconv.Atoi(ssResp.Ssresp)
+			if Resp >= CAPTCHA && Resp <= BLOCK && err == nil && callType != MOBILE {
 				Query := getRedirectQueryParams(ssJsonObj, apiConfig.Data.SupportEmail, apiConfig.Data.RedirectDomain)
 				Type := ""
 				schema := "http://"
 				if strings.Contains(apiConfig.Data.EndPointSSL, "True") {
 					schema = "https://"
 				}
-				if ss_Resp.Ssresp == strconv.Itoa(CAPTCHA) && strings.Contains(apiConfig.Data.SSCaptchaEnabled, "True") {
+				if ssResp.Ssresp == strconv.Itoa(CAPTCHA) && strings.Contains(apiConfig.Data.SSCaptchaEnabled, "True") {
 					Type = "/captcha?"
 					RedirUrl := schema + apiConfig.Data.RedirectDomain + Type + Query
 					http.Redirect(w, req, RedirUrl, http.StatusTemporaryRedirect)
 				}
-				if ss_Resp.Ssresp == strconv.Itoa(BLOCK) && strings.Contains(apiConfig.Data.SSBlockEnabled, "True") {
+				if ssResp.Ssresp == strconv.Itoa(BLOCK) && strings.Contains(apiConfig.Data.SSBlockEnabled, "True") {
 					Type = "/block?"
 					RedirUrl := schema + apiConfig.Data.RedirectDomain + Type + Query
 					http.Redirect(w, req, RedirUrl, http.StatusTemporaryRedirect)
@@ -645,9 +644,9 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 
 		}
 	}
-	if call_type == MOBILE {
-		if (apiConfig.Data.SSCaptchaEnabled == "True" && ss_Resp.Ssresp == "2") || (apiConfig.Data.SSBlockEnabled == "True" && ss_Resp.Ssresp == "3") {
-			w.Header().Add("_uzmcr", GetUzmcr(ss_Resp.Ssresp))
+	if callType == MOBILE {
+		if (apiConfig.Data.SSCaptchaEnabled == "True" && ssResp.Ssresp == "2") || (apiConfig.Data.SSBlockEnabled == "True" && ssResp.Ssresp == "3") {
+			w.Header().Add("_uzmcr", GetUzmcr(ssResp.Ssresp))
 		}
 		if apiConfig.Data.PostURL != "" {
 			w.Header().Add("posturl", apiConfig.Data.PostURL)
@@ -658,7 +657,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	}
 
 	if apiConfigParsedData.SeverLogsEnabled && apiConfig.Data.Mode == "Active" {
-		log := SIEM_JSON{ssJsonObj.Zpsbd6, ssJsonObj.Zpsbd7, ssJsonObj.Zpsbd4, ssJsonObj.Zpsbd3, ssJsonObj.Zpsbd5, ssJsonObj.Zpsbd9, respTime, errorDesc}
+		log := siemJson{ssJsonObj.Zpsbd6, ssJsonObj.Zpsbd7, ssJsonObj.Zpsbd4, ssJsonObj.Zpsbd3, ssJsonObj.Zpsbd5, ssJsonObj.Zpsbd9, respTime, errorDesc}
 		logLevel := "debug"
 		if apiConfig.Data.LogLevel != "" {
 			logLevel = apiConfig.Data.LogLevel
@@ -667,13 +666,13 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	}
 
 	glog.Flush()
-	return json.Marshal(ss_Resp)
+	return json.Marshal(ssResp)
 
 }
 
-func Sync_SendReq2SS(ss_service_url string, jsonObject []byte) string {
+func SyncSendreq2ss(ssServiceUrl string, jsonObject []byte) string {
 
-	req, _ := http.NewRequest(http.MethodPost, ss_service_url, bytes.NewBuffer(jsonObject))
+	req, _ := http.NewRequest(http.MethodPost, ssServiceUrl, bytes.NewBuffer(jsonObject))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(req)
@@ -696,9 +695,9 @@ func Sync_SendReq2SS(ss_service_url string, jsonObject []byte) string {
 	}
 }
 
-func Async_SendReq2SS(ss_service_url string, jsonObject []byte) {
+func AsyncSendreq2ss(ssServiceUrl string, jsonObject []byte) {
 
-	req, _ := http.NewRequest(http.MethodPost, ss_service_url, bytes.NewBuffer(jsonObject))
+	req, _ := http.NewRequest(http.MethodPost, ssServiceUrl, bytes.NewBuffer(jsonObject))
 	req.Header.Set("Content-Type", "application/json")
 
 	go func() {
@@ -715,8 +714,8 @@ func Async_SendReq2SS(ss_service_url string, jsonObject []byte) {
 	}()
 }
 
-func GenerateUzmc(uzmc_counter int) string {
-	count := ((uzmc_counter + 1) * 3) + 7
+func GenerateUzmc(uzmcCounter int) string {
+	count := ((uzmcCounter + 1) * 3) + 7
 	uzmc := strconv.Itoa(randomNum(10000, 99999)) + strconv.Itoa(count) + strconv.Itoa(randomNum(10000, 99999))
 	return uzmc
 }
@@ -724,7 +723,7 @@ func GenerateUzmc(uzmc_counter int) string {
 func GeneratePid(sid string) string {
 	b := strings.Split(sid, "-")
 	s := strings.ToLower(strconv.FormatInt(int64(time.Now().Unix()), 16))
-	return randomHex(10000, 65000) + randomHex(10000, 65000) + "-" + b[3] + "-" + reverseStr(s[len(s)-4:len(s)]) + "-" + randomHex(10000, 65000) + "-" + randomHex(10000, 65000) + randomHex(10000, 65000) + randomHex(10000, 65000)
+	return randomHex(10000, 65000) + randomHex(10000, 65000) + "-" + b[3] + "-" + reverseStr(s[len(s)-4:]) + "-" + randomHex(10000, 65000) + "-" + randomHex(10000, 65000) + randomHex(10000, 65000) + randomHex(10000, 65000)
 }
 
 func randomHex(min, max int) string {
@@ -763,11 +762,11 @@ func RandomString(strlen int, charset string) string {
 }
 
 func GenerateUUID() string {
-	uuid, err := uuid.NewV4()
+	UUID, err := uuid.NewV4()
 	if err != nil {
 		panic(err)
 	}
-	return uuid.String()
+	return UUID.String()
 }
 
 func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain string) string {
@@ -856,20 +855,20 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 
 }
 
-func printSIEM(siem_json SIEM_JSON, log_level string) {
-	siemLog, err := json.Marshal(siem_json)
+func printSIEM(siemJson siemJson, logLevel string) {
+	siemLog, err := json.Marshal(siemJson)
 	if err != nil {
 		glog.V(2).Info("[ShieldSquare:error] --> Error while creating SIEM Log")
 	}
-	if strings.ToLower(log_level) == "info" {
+	if strings.ToLower(logLevel) == "info" {
 		glog.V(2).Info("[ShieldSquare:info] --> SIEM Log : \n", string(siemLog))
-	} else if strings.ToLower(log_level) == "debug" {
+	} else if strings.ToLower(logLevel) == "debug" {
 		glog.V(2).Info("[ShieldSquare:debug] --> SIEM Log : \n", string(siemLog))
-	} else if strings.ToLower(log_level) == "warn" {
+	} else if strings.ToLower(logLevel) == "warn" {
 		glog.V(2).Info("[ShieldSquare:warn] --> SIEM Log : \n", string(siemLog))
-	} else if strings.ToLower(log_level) == "err" {
+	} else if strings.ToLower(logLevel) == "err" {
 		glog.V(2).Info("[ShieldSquare:error] --> SIEM Log : \n", string(siemLog))
-	} else if strings.ToLower(log_level) == "notice" {
+	} else if strings.ToLower(logLevel) == "notice" {
 		glog.V(2).Info("[ShieldSquare:notice] --> SIEM Log : \n", string(siemLog))
 	}
 
