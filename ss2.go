@@ -8,11 +8,10 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"fmt"
-	"github.com/golang/glog"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
+	"log"
 	"math/rand"
 	"net"
 	"net/http"
@@ -123,19 +122,12 @@ type APIConfig struct {
 		BlacklistHeaders     string `json:"_blacklist_headers"`
 		WhitelistHeaders     string `json:"_whitelist_headers"`
 		Secure               string `json:"_is_secure"`
+		Server               string `json:"_server"`
+		Port                 string `json:"_port"`
 	}
 }
 
-type siemJson struct {
-	IP           string
-	UA           string
-	URL          string
-	Referrer     string
-	Session      string
-	Username     string
-	ResponseTime int64
-	Error        string
-}
+var siemJson map[string]interface{}
 
 var apiServer = APIServer{}
 var apiVersion = APIVersion{}
@@ -144,16 +136,20 @@ var ssJsonObj = SSJsonObj{}
 var lastCfgTime int64
 var lastVersion uint64
 
+var conn, _ = net.ListenPacket("udp", ":0")
+
+var xRespTime = ""
+
 var (
 	httpClient *http.Client
 )
 
-var errorDesc string
+var errorDesc = ""
 
 func init() {
+
 	configLoc := os.Getenv("PATH_TO_SS")
-	//configLoc = configLoc + "ss2_config.json"
-	//file, er := os.Open("/root/go/ss2_config.json")
+
 	file, er := os.Open(configLoc + "ss2_config.json")
 
 	if er != nil {
@@ -165,14 +161,25 @@ func init() {
 		fmt.Println("error:", err)
 	}
 
-	flag.Lookup("log_dir").Value.Set(apiServer.LogPath)
-	flag.Lookup("v").Value.Set("2")
-	flag.Parse()
+	f, _ := os.OpenFile(apiServer.LogPath+"ShieldSquare.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	logInfo = log.New(f, "INFO ", log.LstdFlags|log.Lshortfile)
+	logDebug = log.New(f, "DEBUG ", log.LstdFlags|log.Lshortfile)
+	logWarn = log.New(f, "WARN ", log.LstdFlags|log.Lshortfile)
+	logError = log.New(f, "ERROR ", log.LstdFlags|log.Lshortfile)
 
 	timeout, _ := strconv.Atoi(apiServer.APIServerTimeout)
 	ssl, _ := strconv.ParseBool(apiServer.APIServerSSL)
 	httpClient = createHTTPClient(timeout, ssl)
 }
+
+var f, _ = os.OpenFile(apiServer.LogPath+"ShieldSquare.log",
+	os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+var logInfo = log.New(f, "INFO", log.LstdFlags)
+var logDebug = log.New(f, "DEBUG", log.LstdFlags)
+var logWarn = log.New(f, "WARN", log.LstdFlags)
+var logError = log.New(f, "ERROR", log.LstdFlags)
 
 func createHTTPClient(timeout int, ssl bool) *http.Client {
 
@@ -180,7 +187,6 @@ func createHTTPClient(timeout int, ssl bool) *http.Client {
 	if ssl {
 		certLoc := os.Getenv("PATH_TO_SS")
 		certLoc = certLoc + "ShieldsquareCABundle.pem"
-		//Cert, err := ioutil.ReadFile("/root/go/ShieldsquareCABundle.pem")
 		Cert, err := ioutil.ReadFile(certLoc)
 		if err != nil {
 			fmt.Println("Error in reading cert")
@@ -325,7 +331,6 @@ func ssApiPoll(attr string) (string, bool) {
 	if err != nil {
 		// panic(err)
 		fmt.Println(err)
-
 		return "", false
 	}
 	defer response.Body.Close()
@@ -362,6 +367,10 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 				json.Unmarshal([]byte(response), &apiConfig)
 				//write update for the config
 				UpdateApiConfigParsedData()
+
+				if apiConfigParsedData.LogsEnabled == true {
+					logDebug.Println("Config Received from ShieldSquare : ", response)
+				}
 
 				//updating configuration file.
 				if apiConfig.Data.APIServerDomain != apiServer.APIServerDomain || apiConfig.Data.APIServerTimeout != apiServer.APIServerTimeout || apiConfig.Data.APIServerSSL != apiServer.APIServerSSL {
@@ -411,14 +420,11 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 
 	ssServiceUrl := schema + apiConfig.Data.APIServerDomain + "/getRequestData"
 	if apiConfigParsedData.LogsEnabled == true {
-		glog.V(2).Info("[ShieldSquare:info] --> ss service url : ", ssServiceUrl)
+		logDebug.Println("ShieldSquare Service URL : ", ssServiceUrl)
 	}
 	ip, Port, _ := net.SplitHostPort(req.RemoteAddr)
 	userIP := ""
 	splitIP := ""
-	if apiConfigParsedData.LogsEnabled == true {
-		glog.V(2).Info("[ShieldSquare:info] --> user ip : ", userIP)
-	}
 
 	if strings.Contains(apiConfig.Data.IPAddress, "Auto") {
 		userIP = strings.Trim(net.IP.String(net.ParseIP(ip)), ":")
@@ -467,7 +473,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		cookieAbsent = true
 		uzmcVal = GenerateUzmc(0)
 		if apiConfigParsedData.LogsEnabled == true {
-			glog.V(2).Info("[ShieldSquare:error] --> error while getting cookie : ")
+			logError.Println("error while getting cookie")
 		}
 	} else {
 		if len(cookieB.Value) != 10 || IsDigit(cookieB.Value) == false || len(cookieC.Value) < 12 || IsDigit(cookieC.Value) == false || len(cookieD.Value) != 10 || IsDigit(cookieD.Value) == false || len(cookieA.Value) != 36 {
@@ -484,7 +490,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		uuidVar, err := uuid.NewV4()
 		if err != nil {
 			if apiConfigParsedData.LogsEnabled == true {
-				glog.V(2).Info("[ShieldSquare : error] --> uuidVar generation failed")
+				logError.Println("uuidVar generation failed")
 			}
 		}
 
@@ -607,7 +613,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 
 	jsonObject, _ := json.Marshal(ssJsonObj)
 	if apiConfigParsedData.LogsEnabled == true {
-		glog.V(2).Info("[ShieldSquare:info] --> Body ", string(jsonObject))
+		logDebug.Println("Body : ", string(jsonObject))
 	}
 	fmt.Println(string(jsonObject))
 
@@ -619,6 +625,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		ssResponse := SyncSendreq2ss(ssServiceUrl, jsonObject)
 		recTime = time.Now().UnixNano() / int64(time.Millisecond)
 		respTime = recTime - sendTime
+
 		if ssResponse != "" {
 			json.Unmarshal([]byte(ssResponse), &ssResp)
 			ssResp = SsServiceResp{ssResp.Ssresp, ssResp.DynamicJs, ssResp.BotCode}
@@ -643,7 +650,28 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			}
 
 		}
+
 	}
+
+	if apiConfigParsedData.SeverLogsEnabled && apiConfig.Data.Mode == "Active" {
+		siemJson = make(map[string]interface{})
+		siemJson["IP"] = ssJsonObj.Zpsbd6
+		siemJson["UA"] = ssJsonObj.Zpsbd7
+		siemJson["URL"] = ssJsonObj.Zpsbd4
+		siemJson["Referrer"] = ssJsonObj.Zpsbd3
+		siemJson["Session"] = ssJsonObj.Zpsbd5
+		siemJson["Username"] = ssJsonObj.Zpsbd9
+		if errorDesc != "" {
+			siemJson["Error"] = errorDesc
+		} else {
+			siemJson["Response Time"] = strconv.Itoa(int(respTime)) + "ms"
+			siemJson["Response"] = ssResp
+			siemJson["X-Response-Time"] = xRespTime
+		}
+
+		logSIEM(siemJson, apiConfig)
+	}
+
 	if callType == MOBILE {
 		if (apiConfig.Data.SSCaptchaEnabled == "True" && ssResp.Ssresp == "2") || (apiConfig.Data.SSBlockEnabled == "True" && ssResp.Ssresp == "3") {
 			w.Header().Add("_uzmcr", GetUzmcr(ssResp.Ssresp))
@@ -656,16 +684,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		}
 	}
 
-	if apiConfigParsedData.SeverLogsEnabled && apiConfig.Data.Mode == "Active" {
-		log := siemJson{ssJsonObj.Zpsbd6, ssJsonObj.Zpsbd7, ssJsonObj.Zpsbd4, ssJsonObj.Zpsbd3, ssJsonObj.Zpsbd5, ssJsonObj.Zpsbd9, respTime, errorDesc}
-		logLevel := "debug"
-		if apiConfig.Data.LogLevel != "" {
-			logLevel = apiConfig.Data.LogLevel
-		}
-		printSIEM(log, logLevel)
-	}
-
-	glog.Flush()
+	defer f.Close()
 	return json.Marshal(ssResp)
 
 }
@@ -683,14 +702,16 @@ func SyncSendreq2ss(ssServiceUrl string, jsonObject []byte) string {
 
 	if resp.StatusCode == http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
+		xRespTime = resp.Header.Get("x-response-time")
 		fmt.Println(string(body))
 		if err != nil {
 			errorDesc = string(err.Error())
 		}
 		return string(body)
 	} else {
-		// Log proper error
-		fmt.Println("Error")
+		if err != nil {
+			errorDesc = string(err.Error())
+		}
 		return ""
 	}
 }
@@ -705,7 +726,7 @@ func AsyncSendreq2ss(ssServiceUrl string, jsonObject []byte) {
 		if err != nil {
 			if apiConfigParsedData.LogsEnabled == true {
 				errorDesc = string(err.Error())
-				glog.V(2).Info("[ShieldSquare:error] --> async_post error ", err)
+				logError.Println("sync_post error ", err)
 			}
 		}
 		if resp != nil {
@@ -784,10 +805,7 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		EmailID = "contactus@shieldsquare.com"
 	}
 	Digits := "0123456789"
-	Chars := "abcdefghijk@lmnop"
 	CharDigits0 := "0123456789abcdef"
-	CharDigits1 := "0123456abcdefghkizlmp"
-	CharDigits2 := "pqrstuv23419@lmno"
 	UzmcSequence := ssJsonObj.Uzmc[5 : len(ssJsonObj.Uzmc)-5]
 	UzmaFirstPart := ""
 	UzmaSeconPart := ""
@@ -799,26 +817,10 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 		UzmaFirstPart = ssJsonObj.Uzma[0:20]
 		UzmaSeconPart = ssJsonObj.Uzma[20:len(ssJsonObj.Uzma)]
 	}
-
-	UserAgent := [5]string{
-		"Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-		"Mozilla/4.0 (Windows NT 5.1) AppleWebKit/535.7 (KHTML,like zeco) Chrome/33.0.1750.154 Safari/536.7",
-		"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1) Gecko/20100101 Firefox/39.0",
-		"Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)",
-		"Chrome/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16",
-	}
 	ssa := GenerateUUID()
-	ssb := RandomString(25, CharDigits1)
 	ssc := url.QueryEscape(ssJsonObj.Zpsbd4)
-	ssd := RandomString(15, Digits)
-	sse := RandomString(15, Chars)
-	ssf := RandomString(40, CharDigits0)
-	ssg := GenerateUUID()
-	ssh := GenerateUUID()
 	ssi := ssJsonObj.Zpsbd2
-	ssj := GenerateUUID()
 	ssk := EmailID
-	ssl := RandomString(12, Digits)
 	ssm := RandomString(17, Digits) + UzmcSequence + RandomString(13, Digits)
 
 	DecodeUrl, _ := url.QueryUnescape(ssJsonObj.Zpsbd4)
@@ -834,42 +836,56 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 
 	ssr := base64.StdEncoding.EncodeToString([]byte(IPtoProcess))
 
-	sss := UserAgent[randomNum(1, 5)]
 	sst := ssJsonObj.Zpsbd7
-	ssu := UserAgent[randomNum(1, 5)]
 
-	ssv := RandomString(15, CharDigits2)
+	ssv := base64.StdEncoding.EncodeToString([]byte(ssJsonObj.Zpsbd9))
 	ssw := ssJsonObj.Zpsbd5
-	ssx := RandomString(15, Digits)
-	ssy := RandomString(40, Chars)
-	ssz := RandomString(15, CharDigits0)
 
-	query := "ssa=" + ssa + "&ssb=" + ssb + "&ssc=" + ssc + "&ssd=" + ssd + "&sse=" + sse +
-		"&ssf=" + ssf + "&ssg=" + ssg + "&ssh=" + ssh + "&ssi=" + ssi + "&ssj=" + ssj +
-		"&ssk=" + ssk + "&ssl=" + ssl + "&ssm=" + ssm + "&ssn=" + ssn + "&sso=" + sso +
-		"&ssp=" + ssp + "&ssq=" + ssq + "&ssr=" + ssr + "&sss=" + sss + "&sst=" + sst +
-		"&ssu=" + ssu + "&ssv=" + ssv + "&ssw=" + ssw + "&ssx=" + ssx + "&ssy=" + ssy +
-		"&ssz=" + ssz
+	query := "ssa=" + ssa + "&ssc=" + ssc + "&ssi=" + ssi +
+		"&ssk=" + ssk + "&ssm=" + ssm + "&ssn=" + ssn + "&sso=" + sso +
+		"&ssp=" + ssp + "&ssq=" + ssq + "&ssr=" + ssr + "&sst=" + sst +
+		"&ssv=" + ssv + "&ssw=" + ssw
 
 	return query
 
 }
 
-func printSIEM(siemJson siemJson, logLevel string) {
+func logSIEM(siemJson map[string]interface{}, config APIConfig) {
+
+	siemLog, _ := json.Marshal(siemJson)
+	logLevel := "debug"
+	if apiConfig.Data.LogLevel != "" {
+		logLevel = apiConfig.Data.LogLevel
+	}
+
+	if config.Data.Server != "" || config.Data.Port != "" {
+		addr := config.Data.Server + ":" + config.Data.Port
+		dest, err := net.ResolveUDPAddr("udp", addr)
+		if err != nil {
+			logError.Println("Something went wrong while creating UDP. Printing logs into ShieldSquare Logs.")
+			printSIEM(siemJson, logLevel)
+		}
+		conn.WriteTo([]byte(siemLog), dest)
+	} else {
+		logError.Println("Printing SIEM logs into ShieldSquare log because Server or Port is empty.")
+		printSIEM(siemJson, logLevel)
+	}
+
+}
+
+func printSIEM(siemJson map[string]interface{}, logLevel string) {
 	siemLog, err := json.Marshal(siemJson)
 	if err != nil {
-		glog.V(2).Info("[ShieldSquare:error] --> Error while creating SIEM Log")
+		logError.Println("Error while creating SIEM Log")
 	}
 	if strings.ToLower(logLevel) == "info" {
-		glog.V(2).Info("[ShieldSquare:info] --> SIEM Log : \n", string(siemLog))
+		logInfo.Println("SIEM Log :", string(siemLog))
 	} else if strings.ToLower(logLevel) == "debug" {
-		glog.V(2).Info("[ShieldSquare:debug] --> SIEM Log : \n", string(siemLog))
+		logDebug.Println("SIEM Log :", string(siemLog))
 	} else if strings.ToLower(logLevel) == "warn" {
-		glog.V(2).Info("[ShieldSquare:warn] --> SIEM Log : \n", string(siemLog))
+		logWarn.Println("SIEM Log :", string(siemLog))
 	} else if strings.ToLower(logLevel) == "err" {
-		glog.V(2).Info("[ShieldSquare:error] --> SIEM Log : \n", string(siemLog))
-	} else if strings.ToLower(logLevel) == "notice" {
-		glog.V(2).Info("[ShieldSquare:notice] --> SIEM Log : \n", string(siemLog))
+		logError.Println("SIEM Log :", string(siemLog))
 	}
 
 }
