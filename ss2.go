@@ -136,6 +136,17 @@ var ssJsonObj = SSJsonObj{}
 var lastCfgTime int64
 var lastVersion uint64
 
+const MAXFILESIZE = 5242880
+const MAXFILES = 5
+
+var f, _ = os.OpenFile("/tmp/"+"ShieldSquare_GoLang.log",
+	os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+var logInfo = log.New(f, "INFO", log.LstdFlags)
+var logDebug = log.New(f, "DEBUG", log.LstdFlags)
+var logWarn = log.New(f, "WARN", log.LstdFlags)
+var logError = log.New(f, "ERROR", log.LstdFlags)
+
 var conn, _ = net.ListenPacket("udp", ":0")
 
 var xRespTime = ""
@@ -161,7 +172,9 @@ func init() {
 		fmt.Println("error:", err)
 	}
 
-	f, _ := os.OpenFile(apiServer.LogPath+"ShieldSquare.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, _ = checkLogFile(apiServer)
+
+	//	f, _ := os.OpenFile(apiServer.LogPath+"ShieldSquare.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 
 	logInfo = log.New(f, "INFO ", log.LstdFlags|log.Lshortfile)
 	logDebug = log.New(f, "DEBUG ", log.LstdFlags|log.Lshortfile)
@@ -173,13 +186,44 @@ func init() {
 	httpClient = createHTTPClient(timeout, ssl)
 }
 
-var f, _ = os.OpenFile(apiServer.LogPath+"ShieldSquare.log",
-	os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+func checkLogFile(server APIServer) (*os.File, interface{}) {
+	var logDir = ""
+	if server.LogPath != "" {
+		logDir = server.LogPath
+	} else {
+		logDir = "/tmp/"
+	}
 
-var logInfo = log.New(f, "INFO", log.LstdFlags)
-var logDebug = log.New(f, "DEBUG", log.LstdFlags)
-var logWarn = log.New(f, "WARN", log.LstdFlags)
-var logError = log.New(f, "ERROR", log.LstdFlags)
+	var logFile = logDir + "ShieldSquare_GoLang.log"
+	fi, _ := os.Stat(logFile)
+	if file_is_exists(logFile) && fi.Size() > MAXFILESIZE {
+		if file_is_exists(logFile + "." + strconv.Itoa(MAXFILES)) {
+			err := os.Remove(logFile + "." + strconv.Itoa(MAXFILES))
+			if err != nil {
+				logError.Println("Something went wrong while deleting the file : " + logFile + "." + strconv.Itoa(MAXFILES))
+			}
+		}
+
+		for i := MAXFILES; i > 0; i-- {
+			if file_is_exists(logFile + "." + strconv.Itoa(i)) {
+				next := i + 1
+				os.Rename(logFile+"."+strconv.Itoa(i), logFile+"."+strconv.Itoa(next))
+			}
+		}
+		os.Rename(logFile, logFile+".1")
+		return os.OpenFile(logFile+".1", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	}
+
+	return os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+}
+
+func file_is_exists(f string) bool {
+	_, err := os.Stat(f)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return err == nil
+}
 
 func createHTTPClient(timeout int, ssl bool) *http.Client {
 
@@ -648,7 +692,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 					http.Redirect(w, req, RedirUrl, http.StatusTemporaryRedirect)
 				}
 			}
-
+			logDebug.Println("ShieldSquare Response : " + ssResponse)
 		}
 
 	}
