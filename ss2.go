@@ -141,7 +141,7 @@ const MAXFILESIZE = 5242880
 const MAXFILES = 5
 
 var f, _ = os.OpenFile("/tmp/"+"ShieldSquare_GoLang.log",
-	os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 
 var logInfo = log.New(f, "INFO", log.LstdFlags)
 var logDebug = log.New(f, "DEBUG", log.LstdFlags)
@@ -212,10 +212,10 @@ func checkLogFile(server APIServer) (*os.File, interface{}) {
 			}
 		}
 		os.Rename(logFile, logFile+".1")
-		return os.OpenFile(logFile+".1", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		return os.OpenFile(logFile+".1", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	}
 
-	return os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	return os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 }
 
 func file_is_exists(f string) bool {
@@ -729,8 +729,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			w.Header().Add("trkevent", apiConfig.Data.TrkEvent)
 		}
 	}
-
-	defer f.Close()
+	f.Sync()
 	return json.Marshal(ssResp)
 
 }
