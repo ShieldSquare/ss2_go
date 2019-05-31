@@ -75,7 +75,7 @@ type APIServer struct {
 	APIServerSSL     string      `json:"api_server_ssl_enabled"`
 	DeploymentNumber string      `json:"deployment_number"`
 	Domain           interface{} `json:"domain"`
-	LogPath          string      `json:"log_dir"`
+	LogPath          string      `json:"file_write_location"`
 	DebugLog         string      `json:"debug_log,omitempty"`
 }
 
@@ -124,6 +124,7 @@ type APIConfig struct {
 		Secure               string `json:"_is_secure"`
 		Server               string `json:"_server"`
 		Port                 string `json:"_port"`
+		LogPath              string `json:"_file_write_location"`
 	}
 }
 
@@ -417,10 +418,11 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 				}
 
 				//updating configuration file.
-				if apiConfig.Data.APIServerDomain != apiServer.APIServerDomain || apiConfig.Data.APIServerTimeout != apiServer.APIServerTimeout || apiConfig.Data.APIServerSSL != apiServer.APIServerSSL {
+				if apiConfig.Data.APIServerDomain != apiServer.APIServerDomain || apiConfig.Data.APIServerTimeout != apiServer.APIServerTimeout || apiConfig.Data.APIServerSSL != apiServer.APIServerSSL || apiConfig.Data.LogPath != apiServer.LogPath {
 					apiServer.APIServerDomain = apiConfig.Data.APIServerDomain
 					apiServer.APIServerTimeout = apiConfig.Data.APIServerTimeout
 					apiServer.APIServerSSL = apiConfig.Data.APIServerSSL
+					apiServer.LogPath = apiConfig.Data.LogPath
 					filename := os.Getenv("PATH_TO_SS") + "ss2_config.json"
 					updatedJson, _ := json.Marshal(apiServer)
 					ioutil.WriteFile(filename, updatedJson, 0644)
