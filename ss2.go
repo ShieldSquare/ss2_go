@@ -173,24 +173,15 @@ func init() {
 		fmt.Println("error:", err)
 	}
 
-	f, _ = checkLogFile(apiServer)
-
-	//	f, _ := os.OpenFile(apiServer.LogPath+"ShieldSquare.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
-	logInfo = log.New(f, "INFO ", log.LstdFlags|log.Lshortfile)
-	logDebug = log.New(f, "DEBUG ", log.LstdFlags|log.Lshortfile)
-	logWarn = log.New(f, "WARN ", log.LstdFlags|log.Lshortfile)
-	logError = log.New(f, "ERROR ", log.LstdFlags|log.Lshortfile)
-
 	timeout, _ := strconv.Atoi(apiServer.APIServerTimeout)
 	ssl, _ := strconv.ParseBool(apiServer.APIServerSSL)
 	httpClient = createHTTPClient(timeout, ssl)
 }
 
-func checkLogFile(server APIServer) (*os.File, interface{}) {
+func checkLogFile(config APIConfig) (*os.File, interface{}) {
 	var logDir = ""
-	if server.LogPath != "" {
-		logDir = server.LogPath
+	if config.Data.LogPath != "" {
+		logDir = config.Data.LogPath
 	} else {
 		logDir = "/tmp/"
 	}
@@ -388,6 +379,7 @@ func ssApiPoll(attr string) (string, bool) {
 }
 
 func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]byte, error) {
+
 	var sendTime int64
 	var recTime int64
 	var respTime int64
@@ -417,7 +409,14 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 					logDebug.Println("Config Received from ShieldSquare : ", response)
 				}
 
+				f, _ = checkLogFile(apiConfig)
+
+				logInfo = log.New(f, "INFO ", log.LstdFlags|log.Lshortfile)
+				logDebug = log.New(f, "DEBUG ", log.LstdFlags|log.Lshortfile)
+				logWarn = log.New(f, "WARN ", log.LstdFlags|log.Lshortfile)
+				logError = log.New(f, "ERROR ", log.LstdFlags|log.Lshortfile)
 				//updating configuration file.
+
 				if apiConfig.Data.APIServerDomain != apiServer.APIServerDomain || apiConfig.Data.APIServerTimeout != apiServer.APIServerTimeout || apiConfig.Data.APIServerSSL != apiServer.APIServerSSL || apiConfig.Data.LogPath != apiServer.LogPath {
 					apiServer.APIServerDomain = apiConfig.Data.APIServerDomain
 					apiServer.APIServerTimeout = apiConfig.Data.APIServerTimeout
