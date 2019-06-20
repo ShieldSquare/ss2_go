@@ -747,7 +747,6 @@ func SyncSendreq2ss(ssServiceUrl string, jsonObject []byte) string {
 	if resp.StatusCode == http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		xRespTime = resp.Header.Get("x-response-time")
-		fmt.Println(string(body))
 		if err != nil {
 			errorDesc = string(err.Error())
 		}
