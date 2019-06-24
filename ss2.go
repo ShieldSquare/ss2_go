@@ -187,8 +187,8 @@ func checkLogFile(config APIConfig) (*os.File, interface{}) {
 
 	var logFile = logDir + "ShieldSquare_GoLang.log"
 	fi, _ := os.Stat(logFile)
-	if file_is_exists(logFile) && fi.Size() > MAXFILESIZE {
-		if file_is_exists(logFile + "." + strconv.Itoa(MAXFILES)) {
+	if fileExists(logFile) && fi.Size() > MAXFILESIZE {
+		if fileExists(logFile + "." + strconv.Itoa(MAXFILES)) {
 			err := os.Remove(logFile + "." + strconv.Itoa(MAXFILES))
 			if err != nil {
 				logError.Println("Something went wrong while deleting the file : " + logFile + "." + strconv.Itoa(MAXFILES))
@@ -196,7 +196,7 @@ func checkLogFile(config APIConfig) (*os.File, interface{}) {
 		}
 
 		for i := MAXFILES; i > 0; i-- {
-			if file_is_exists(logFile + "." + strconv.Itoa(i)) {
+			if fileExists(logFile + "." + strconv.Itoa(i)) {
 				next := i + 1
 				os.Rename(logFile+"."+strconv.Itoa(i), logFile+"."+strconv.Itoa(next))
 			}
@@ -208,7 +208,7 @@ func checkLogFile(config APIConfig) (*os.File, interface{}) {
 	return os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 }
 
-func file_is_exists(f string) bool {
+func fileExists(f string) bool {
 	_, err := os.Stat(f)
 	if os.IsNotExist(err) {
 		return false
@@ -390,8 +390,8 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	if time.Now().Unix()-lastCfgTime > 300 || (err == nil && time.Now().Unix()-lastCfgTime > debugTime) {
 		response, status := ssApiPoll("/version")
 		if status {
-			err := json.Unmarshal([]byte(response), &apiVersion)
-			logError.Println("Something went wrong while fetching config version : ", err)
+			json.Unmarshal([]byte(response), &apiVersion)
+			logError.Println("Configuration Version : ", apiVersion)
 		} else {
 			return json.Marshal(ssResp)
 		}
