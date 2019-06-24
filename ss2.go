@@ -8,7 +8,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"log"
@@ -165,12 +164,12 @@ func init() {
 	file, er := os.Open(configLoc + "ss2_config.json")
 
 	if er != nil {
-		fmt.Println(er)
+		logError.Println("Error while opening config file : ", er)
 	}
 	decoder := json.NewDecoder(file)
 	err := decoder.Decode(&apiServer)
 	if err != nil {
-		fmt.Println("error:", err)
+		logError.Println("Error while decoding the config JSON(config file) : ", err)
 	}
 
 	timeout, _ := strconv.Atoi(apiServer.APIServerTimeout)
@@ -225,7 +224,7 @@ func createHTTPClient(timeout int, ssl bool) *http.Client {
 		certLoc = certLoc + "ShieldsquareCABundle.pem"
 		Cert, err := ioutil.ReadFile(certLoc)
 		if err != nil {
-			fmt.Println("Error in reading cert")
+			logError.Println("Error in reading cert : ", err)
 		}
 		certPool := x509.NewCertPool()
 		certPool.AppendCertsFromPEM(Cert)
@@ -366,7 +365,7 @@ func ssApiPoll(attr string) (string, bool) {
 	response, err := httpClient.Do(request)
 	if err != nil {
 		// panic(err)
-		fmt.Println(err)
+		logError.Println("Error while getting environment : ", err)
 		return "", false
 	}
 	defer response.Body.Close()
@@ -392,7 +391,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 		response, status := ssApiPoll("/version")
 		if status {
 			err := json.Unmarshal([]byte(response), &apiVersion)
-			fmt.Println(err)
+			logError.Println("Something went wrong while fetching config version : ", err)
 		} else {
 			return json.Marshal(ssResp)
 		}
@@ -660,7 +659,6 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 	if apiConfigParsedData.LogsEnabled == true {
 		logDebug.Println("Body : ", string(jsonObject))
 	}
-	fmt.Println(string(jsonObject))
 
 	if apiConfig.Data.Mode == "Monitor" && apiConfig.Data.AsyncPost == "True" {
 		AsyncSendreq2ss(ssServiceUrl, jsonObject)
@@ -740,7 +738,7 @@ func SyncSendreq2ss(ssServiceUrl string, jsonObject []byte) string {
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
-		fmt.Println(err)
+		logError.Println("Something went wrong while posting Asynchronously : ", err)
 	}
 	defer resp.Body.Close()
 
