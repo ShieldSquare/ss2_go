@@ -23,7 +23,7 @@ import (
 )
 
 /**
-PayLoad generated for shieldsquare server to analysis
+PayLoad generated for ShieldSquare server to analysis
 */
 type SSJsonObj struct {
 	Zpsbd0   bool              `json:"_zpsbd0"`             //active /monitor
@@ -38,7 +38,7 @@ type SSJsonObj struct {
 	Zpsbd9   string            `json:"_zpsbd9,omitempty"`   //user id
 	Zpsbda   int64             `json:"_zpsbda"`             //unix timestamp
 	Zpsbdxrw string            `json:"_zpsbdxrw,omitempty"` // X-requested-with
-	Zpsbdm   string            `json:"_zpsbdm,omitempy"`    //HTTP Method
+	Zpsbdm   string            `json:"_zpsbdm,omitempty"`   //HTTP Method
 	Uzma     string            `json:"__uzma"`              //cookie
 	Uzmb     string            `json:"__uzmb"`              //unix timestamp
 	Uzmc     string            `json:"__uzmc"`              //num of pages
@@ -88,11 +88,10 @@ type APIVersion struct {
 type APIConfig struct {
 	Status string `json:"status"`
 	Data   struct {
-		CallType  string `json:"_calltype"`
-		Mode      string `json:"_mode"`
-		Sid       string `json:"_sid"`
-		SS2Domain string `json:"_ss2_domain"`
-		//SS2SslEnabled        string `json:"_api_server_ssl_enabled"`
+		CallType             string `json:"_calltype"`
+		Mode                 string `json:"_mode"`
+		Sid                  string `json:"_sid"`
+		SS2Domain            string `json:"_ss2_domain"`
 		SS2Timeout           string `json:"_timeout_value"`
 		Sessid               string `json:"_sessid"`
 		APIServerDomain      string `json:"_api_server_domain"`
@@ -674,7 +673,7 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 			ssResp = SsServiceResp{ssResp.Ssresp, ssResp.DynamicJs, ssResp.BotCode}
 			Resp, err := strconv.Atoi(ssResp.Ssresp)
 			if Resp >= CAPTCHA && Resp <= BLOCK && err == nil && callType != MOBILE {
-				Query := getRedirectQueryParams(ssJsonObj, apiConfig.Data.SupportEmail, apiConfig.Data.RedirectDomain)
+				Query := getRedirectQueryParams(ssJsonObj, apiConfig.Data.SupportEmail, apiConfig.Data.RedirectDomain, Resp)
 				Type := ""
 				schema := "http://"
 				if strings.Contains(apiConfig.Data.EndPointSSL, "True") {
@@ -831,7 +830,7 @@ func GenerateUUID() string {
 	return UUID.String()
 }
 
-func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain string) string {
+func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain string, Resp int) string {
 
 	if !strings.Contains(RedirDomain, strings.Trim(apiConfig.Data.DefRedirectDomain, "")) {
 		cssa := url.QueryEscape(ssJsonObj.Zpsbd4)
@@ -862,7 +861,7 @@ func getRedirectQueryParams(ssJsonObj SSJsonObj, EmailID string, RedirDomain str
 	ssc := url.QueryEscape(ssJsonObj.Zpsbd4)
 	ssi := ssJsonObj.Zpsbd2
 	ssk := EmailID
-	ssm := RandomString(17, Digits) + UzmcSequence + RandomString(13, Digits)
+	ssm := RandomString(8, Digits) + strconv.Itoa(Resp) + RandomString(8, Digits) + UzmcSequence + RandomString(13, Digits)
 
 	DecodeUrl, _ := url.QueryUnescape(ssJsonObj.Zpsbd4)
 	InputDigest := ssJsonObj.Zpsbd1 + ssJsonObj.Zpsbd5 + DecodeUrl + UzmcSequence + ssJsonObj.Zpsbd2 + ssJsonObj.Zpsbd7 + EmailID + IPtoProcess
