@@ -680,12 +680,12 @@ func ValidateRequest(req *http.Request, w http.ResponseWriter, user string) ([]b
 					schema = "https://"
 				}
 				if ssResp.Ssresp == strconv.Itoa(CAPTCHA) && strings.Contains(apiConfig.Data.SSCaptchaEnabled, "True") {
-					Type = "/captcha?"
+					Type = "/?"
 					RedirUrl := schema + apiConfig.Data.RedirectDomain + Type + Query
 					http.Redirect(w, req, RedirUrl, http.StatusTemporaryRedirect)
 				}
 				if ssResp.Ssresp == strconv.Itoa(BLOCK) && strings.Contains(apiConfig.Data.SSBlockEnabled, "True") {
-					Type = "/block?"
+					Type = "/?"
 					RedirUrl := schema + apiConfig.Data.RedirectDomain + Type + Query
 					http.Redirect(w, req, RedirUrl, http.StatusTemporaryRedirect)
 				}
